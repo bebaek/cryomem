@@ -41,7 +41,7 @@ parameters = {
       name: "Thermometer resistance",
       instrument: "KT2001",
       interface: "GPIB6",
-      read_method: "fetch"
+      read_method: "fetch",
       raw_unit: "1 Ohm",
       sensor: "lakeshore_X104724",
       unit: "K"

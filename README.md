@@ -29,49 +29,39 @@ probe.log()
 To forgo a config file:
 ```
 parameters = {
-  device: {
-    R_device1: {
-      name: "Device 1 resistance",
-      instrument: "SR830",
-      interface: "GPIB5",
-      read_method: "get_r",
-      unit: "0.01 Ohm"
+  "device": {
+    "R_thermometer": {
+      "name": "Thermometer resistance",
+      "instrument": "KT2001",
+      "interface": "gpib11",
+      "read_method": "read_R4W",
+      "raw_unit": "1 Ohm",
+      "sensor": "lakeshore_X104724",
+      "unit": "K"
     },
-    R_thermometer: {
-      name: "Thermometer resistance",
-      instrument: "KT2001",
-      interface: "GPIB6",
-      read_method: "fetch",
-      raw_unit: "1 Ohm",
-      sensor: "lakeshore_X104724",
-      unit: "K"
+    "Rac_device": {
+      "name": "Device lock-in amplitude",
+      "instrument": "SR830",
+      "interface": "gpib9",
+      "read_method": "get_r",
+      "unit": "V"
     },
-    T: {
-      name: "Temperature",
-      input_parameter: "R_thermometer",
-      read_module: "cryomem.cal.DT670",
-      read_method: "R_to_T",
-      read_args: {
-        input_parameter,
-        cal_file: "cal_DT-670_dipprobe.txt"
-      }
-    },
-    t: {
-      name: "Time",
-      read_module: "time"
-      read_method: "time"
+    "t": {
+      "name": "Time",
+      "read_module": "time",
+      "read_method": "time"
     }
   },
-  sequence: {
-    log: {
-      read: {"t", "R_device1", "R_thermometer", "T"},
-      delay: "10 s",
-      duration: "1800 s",
-      datafile_format: "xlsx",  
-      datafile_postfix: "sample 1"      
+  "sequence": {
+    "log": {
+      "read": ["t", "R_thermometer", "Rac_device"],
+      "delay": "5 s",
+      "duration": "20 s",
+      "datafile_name": "test sample 1.txt",
+      "datafile_increment": "No"
     }
   }
 }
 probe.load_config(parameters=parameters)
-probe.log(datafile_postfix="sample 2")
+probe.log()
 ```

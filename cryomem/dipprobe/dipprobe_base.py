@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from importlib import import_module
-import tnminstruments
 from .num_with_unit import isnumstr, numstr2num, convert_num_with_unit
 import ruamel_yaml as yaml
 import copy, os
@@ -15,7 +14,7 @@ class DeviceProp:
         # Raw property from instrument
         if "instrument" in self.param:
             instr_name = self.param["instrument"].upper()
-            mod = import_module("tnminstruments." + instr_name)
+            mod = import_module("cryomem.tnminstruments." + instr_name)
             self.instr = getattr(mod, instr_name)(self.param["interface"])
 
             # Assign access methods
@@ -72,7 +71,8 @@ class DipProbeBase:
         elif "file" in kwargs:
             with open(kwargs["file"], "r") as f:
                 self.rawconfig = yaml.load(f)
-            self.config = self.parse_config(self.rawconfig)
+
+        self.config = self.parse_config(self.rawconfig)
 
     def save_config(self, configfile):
         with open(configfile, "w") as f:
@@ -195,6 +195,10 @@ class DipProbeBase:
         else:
             datapath = "{}/{}.{}".format(self.dataroot, dataname, self.dataext)
 
+        # prepare header
+        header = yaml.dump(self.config, default_flow_style=False)
+
+        # save
         data = self.data
         print("Saving data to: {}...".format(datapath))
-        np.savetxt(datapath, data)
+        np.savetxt(datapath, data, fmt="%.11g", header=header)

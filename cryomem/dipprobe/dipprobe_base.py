@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from importlib import import_module
-from .num_with_unit import isnumstr, numstr2num, convert_num_with_unit
-import ruamel_yaml as yaml
-import copy, os
+from .config import Config
+import os
 from glob import glob
 
 class DeviceProp:
@@ -51,7 +50,7 @@ class DeviceProp:
 
 class DipProbeBase:
     """Base measurement system class"""
-    def __init__(self):
+    def __init__(self, **kwargs):
         #self.dev_param = {}
         #self.seq_param = {}
         self.data = []
@@ -60,49 +59,53 @@ class DipProbeBase:
         self.proplist = []
         self.dataroot = "data"
         self.dataext = "dat"
+        self.config = Config()
 
     def help(self, *args):
         print("Not implemented yet.")
 
     def load_config(self, **kwargs):
-        # Sources of config parameters: argument or file
-        if "parameters" in kwargs:
-            self.rawconfig = kwargs["parameters"]
-        elif "file" in kwargs:
-            with open(kwargs["file"], "r") as f:
-                self.rawconfig = yaml.load(f)
+        return self.config.load_config(**kwargs)
 
-        self.config = self.parse_config(self.rawconfig)
-
-    def save_config(self, configfile):
-        with open(configfile, "w") as f:
-            yaml.dump(self.config, f, default_flow_style=False)
-
-    def parse_config(self, config, **kwargs):
-        """Return a copy of config with some strings converted"""
-        result = copy.deepcopy(config)
-
-        # Recursively reduce down to basic element
-        if type(result) is list:
-            for k, config2 in enumerate(result):
-                result[k] = self.parse_config(config2, **kwargs)
-        elif type(result) is dict:
-            for key in result:
-                result[key] = self.parse_config(result[key], **kwargs)
-        #elif isnumstr(result):
-        #    # Try to convert a number string to int or float
-        #    result = numstr2num(result)
-        elif type(result) is str:
-            # Try to convert a number with a unit to a scaled int or float
-            result = convert_num_with_unit(result)
-
-        return result
-
+#    def load_config(self, **kwargs):
+#        # Sources of config parameters: argument or file
+#        if "parameters" in kwargs:
+#            self.rawconfig = kwargs["parameters"]
+#        elif "file" in kwargs:
+#            with open(kwargs["file"], "r") as f:
+#                self.rawconfig = yaml.load(f)
+#
+#        self.config = parse_config(self.rawconfig)
+#
+#    def save_config(self, configfile):
+#        with open(configfile, "w") as f:
+#            yaml.dump(self.config, f, default_flow_style=False)
+#
+#    def parse_config(self, config, **kwargs):
+#        """Return a copy of config with some strings converted"""
+#        result = copy.deepcopy(config)
+#
+#        # Recursively reduce down to basic element
+#        if type(result) is list:
+#            for k, config2 in enumerate(result):
+#                result[k] = self.parse_config(config2, **kwargs)
+#        elif type(result) is dict:
+#            for key in result:
+#                result[key] = self.parse_config(result[key], **kwargs)
+#        #elif isnumstr(result):
+#        #    # Try to convert a number string to int or float
+#        #    result = numstr2num(result)
+#        elif type(result) is str:
+#            # Try to convert a number with a unit to a scaled int or float
+#            result = convert_num_with_unit(result)
+#
+#        return result
+#
     def create_devprop(self, prop):
         """Create device property object (data)
 
         prop: device property name (string)"""
-        self.devprop[prop] = DeviceProp(**self.rawconfig["device"][prop])
+        self.devprop[prop] = DeviceProp(**self.config.content["device"][prop])
         self.proplist.append(prop)
 
     def get_dev_val(self, proplist):
@@ -116,8 +119,8 @@ class DipProbeBase:
                 self.create_devprop(prop)
 
             # get value
-            if "input_variable" in self.rawconfig["device"][prop]:
-                arg = self.devprop[self.rawconfig["device"][prop]["input_variable"]].lastread
+            if "input_variable" in self.config.content["device"][prop]:
+                arg = self.devprop[self.config.content["device"][prop]["input_variable"]].lastread
                 val.append(self.devprop[prop].read(arg))
             else:
                 val.append(self.devprop[prop].read())
@@ -195,10 +198,11 @@ class DipProbeBase:
         else:
             datapath = "{}/{}.{}".format(self.dataroot, dataname, self.dataext)
 
-        # prepare header
-        header = yaml.dump(self.config, default_flow_style=False)
+        # make header from config
+        #header = yaml.dump(self.config.content, default_flow_style=False)
+        header = self.config.dump_config()
 
         # save
         data = self.data
         print("Saving data to: {}...".format(datapath))
-        np.savetxt(datapath, data, fmt="%.11g", header=header)
+        np.savetxt(datapath, data, fmt="%.11g", delimiter="\t", header=header)

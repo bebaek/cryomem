@@ -19,7 +19,7 @@
 #     read_module: time
 # sequence:
 #   log:
-#     datafile_increment: 'No'
+#     datafile_increment: false
 #     datafile_name: test sample 1
 #     delay: 5.0
 #     duration: 20.0
@@ -30,6 +30,5 @@
 #     - t
 #     - Rac_device
 # 
-1500943138.9 2
-1500943144.5 4
-1500943149.7 6
+1500946641.8 2
+1500946647.3 4

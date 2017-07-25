@@ -8,11 +8,12 @@ class DipProbe(DipProbeBase):
         # convert config of this sequence properly
         exception = ()
         #seq_param = self.parse_config(self.config["sequence"]["log"], exception=exception)
-        seq_param = self.config["sequence"]["log"]
+        seq_param = self.config.content["sequence"]["log"]
         print(seq_param)
 
         # list of device property names to read
         v = seq_param["read"]
+        val = self.get_dev_val(v)   # dummy read
 
         # Measurement loop
         tick = -1

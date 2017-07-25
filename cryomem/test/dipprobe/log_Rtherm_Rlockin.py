@@ -32,7 +32,7 @@ parameters = {
       "delay": "5 s",
       "duration": "20 s",
       "datafile_name": "test sample 1",
-      "datafile_increment": "No",
+      "datafile_increment": False,
       "plot_prop": ["t", "Rac_device"]
     }
   }

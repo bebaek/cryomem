@@ -20,13 +20,12 @@ class DipProbe(DipProbeBase):
         try:
             while tick < seq_param["duration"]:
                 val = self.get_dev_val(v)
-                #print(val)
-                self.append_data(val, tmpfile=True, show=True)
+                self.append_data(val, tmpfile=True, show=False)
                 self.plot_data(*seq_param["plot_prop"])
                 if tick == -1:       # first data point
                     tick0 = val[0]
                 tick = val[0] - tick0
-                print(tick, seq_param["duration"])
+                print(tick, seq_param["duration"], val.values)
                 time.sleep(seq_param["delay"])
         except KeyboardInterrupt:
             s = input("\nSave data before exit? (y/[n]) ")

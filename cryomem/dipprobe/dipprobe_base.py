@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from importlib import import_module
 from .config import Config
@@ -53,7 +54,8 @@ class DipProbeBase:
     def __init__(self, **kwargs):
         #self.dev_param = {}
         #self.seq_param = {}
-        self.data = []
+        #self.data = []
+        self.data = pd.DataFrame()
         #self.devprops = []
         self.devprop = {}
         self.proplist = []
@@ -112,7 +114,8 @@ class DipProbeBase:
         """Get device property value (DAQ)
 
         proplist: list of device property names (string) to read"""
-        val = []
+        #val = []
+        val = pd.Series()
         for prop in proplist:
             # first time to get the device prop
             if prop not in self.devprop:
@@ -121,17 +124,18 @@ class DipProbeBase:
             # get value
             if "input_variable" in self.config.content["device"][prop]:
                 arg = self.devprop[self.config.content["device"][prop]["input_variable"]].lastread
-                val.append(self.devprop[prop].read(arg))
+                #val.append(self.devprop[prop].read(arg))
+                val[prop] = self.devprop[prop].read(arg)
             else:
-                val.append(self.devprop[prop].read())
-                #val.append(getattr(self, prop).read())  # get value
+                #val.append(self.devprop[prop].read())
+                val[prop] = self.devprop[prop].read()
         return val
 
     def set_dev_val(self, **kwargs):
         pass
 
     def append_data(self, data, **kwargs):
-        self.data.append(data)
+        self.data = self.data.append(data, ignore_index=True)
 
         # write to temp file
         if kwargs.get("tmpfile", False):
@@ -149,16 +153,18 @@ class DipProbeBase:
 
         # display data
         if kwargs.get("show", False):
-            print("Data:", data)
+            print("Data:", data.values)
 
     def plot_data(self, xprop, yprop):
-        tmp = list(zip(*self.data))
-        if len(self.data) == 1:
+        #tmp = list(zip(*self.data))
+        x, y = self.data[xprop], self.data[yprop]
+        if self.data.shape[0] == 1:
             # first data point
             self.plotstyle = "o-"
-            self.ix = self.proplist.index(xprop)
-            self.iy = self.proplist.index(yprop)
-            x, y = tmp[self.ix], tmp[self.iy]
+            #self.ix = self.proplist.index(xprop)
+            #self.iy = self.proplist.index(yprop)
+            #x, y = tmp[self.ix], tmp[self.iy]
+
             fig = plt.figure()
             self.ax = fig.add_subplot(111)
             self.pl = self.ax.plot(x, y, self.plotstyle)
@@ -168,7 +174,7 @@ class DipProbeBase:
             #self.pl[0].set_xdata(x)
             #self.pl[0].set_ydata(y)
             #self.ax.autoscale_view()
-            x, y = tmp[self.ix], tmp[self.iy]
+            #x, y = tmp[self.ix], tmp[self.iy]
             self.ax.cla()
             self.pl = self.ax.plot(x, y, self.plotstyle)
 
@@ -200,9 +206,12 @@ class DipProbeBase:
 
         # make header from config
         #header = yaml.dump(self.config.content, default_flow_style=False)
-        header = self.config.dump_config()
+        header = self.config.dump_config(ascomments=True)
 
         # save
-        data = self.data
         print("Saving data to: {}...".format(datapath))
-        np.savetxt(datapath, data, fmt="%.11g", delimiter="\t", header=header)
+        #data = self.data
+        #np.savetxt(datapath, data, fmt="%.11g", delimiter="\t", header=header)
+        data = self.data.to_string()
+        with open(datapath, 'w') as f:
+            f.write(header + '\n' + data + '\n')

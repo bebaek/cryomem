@@ -9,7 +9,7 @@ class GPIB:
         self.unit = unit
         self.addr = addr
         self.inst = rm.open_resource('GPIB{}::{}::INSTR'.format(unit, addr))
-        print(self.query("*IDN?")
+        print(self.query("*IDN?"))
 
     def write(self, cmd):
         return self.inst.write(cmd)

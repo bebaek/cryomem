@@ -1,0 +1,55 @@
+SF1:
+  reticle: SF1
+  device:
+    A01:
+      x: 0
+      y: 3000
+      type: BR/vdP
+    A02:
+      x: -2000
+      y: 3000
+      type: TH/vdP
+    A03:
+      x: -2000
+      y: 3000
+      type: RS/vdP
+    A04:
+      x: -3000
+      y: 3000
+      type: BR/R4w
+    A05:
+      x: -3000
+      y: 2000
+      type: BR/R4w
+    A06:
+      x: -3000
+      y: 1000
+      type: BR/R4w
+    A07:
+      x: -3000
+      y: 0
+      type: BR/R4w
+    A08:
+      x: -3000
+      y: -1000
+      type: BR/R4w
+    A09:
+      x: -3000
+      y: -2000
+      type: BR/R4w
+    A10:
+      x: -3000
+      y: -3000
+      type: BR/R4w
+    A11:
+      x: -2000
+      y: -3000
+      type: BR/R4w
+    A12:
+      x: -1000
+      y: -3000
+      type: BR/R4w
+    A13:
+      x: 0
+      y: -3000
+      type: BR/R4w

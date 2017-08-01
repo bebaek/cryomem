@@ -1,16 +1,16 @@
-#!/usr/bin/python3
-"""Fit and estimate wedge film rate distribution.
-
-BB
-"""
-import numpy as np
+"""Fit and estimate wedge film rate distribution."""
+from cryomem.common.parse_cmd_argv import parse_cmd_argv
 import sys
+import cryomem.common.numstr as ns
+import cryomem.common.defaults as defaults
+import numpy as np
+import pandas as pd
 from scipy.optimize import curve_fit
+from io import StringIO
+import ruamel_yaml as yaml
+import os.path
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-def f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
+def _f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
     """Evaluate 2-d function by: a0*x**2*y**2 + a1*x**2*y + ... + a8
     
     Parameters:
@@ -23,61 +23,211 @@ def f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
             + a3*x*y**2 + a4*x*y + a5*x \
             + a6*y**2 + a7*y + a8
 
-def rotate(x, y, phi):
-    """Return rotated x, y by angle phi (radian)"""
-    x2 = x*np.cos(phi) - y*np.sin(phi)
-    y2 = x*np.sin(phi) + y*np.cos(phi)
-    return x2, y2
+def _to_table(xys, vals):
+    """Make a DataFrame from xy as columns and indices"""
+    x = [xy[0] for xy in xys]
+    y = [xy[1] for xy in xys]
+    df = pd.DataFrame(index=("6","5","4","3","2","1"),
+                      columns=("1","2","3","4","5","6"))
+    for k, val in enumerate(vals):
+        df.loc[y[k], x[k]] = val
 
-def save_fit(fname, params):
-    """Save fit params (np.array)"""
-    np.savetxt(fname, params)
+    return df
 
-def load_fit(fname):
-    return np.loadtxt(fname)
-
-def get_globxy(col, row, xlocal, ylocal):
+def _get_globxy(col, row, xlocal, ylocal):
+    """Return wafer-level coordinate."""
     return (col*10000 - 35000 + xlocal, row*10000 - 35000 + ylocal)
 
-def get_rate(p, x, y, scale):
-    return f((x, y), *list(p))*scale
+def _rotate(x, y, phi):
+    """Return rotated x, y by angle phi (degree)"""
+    x2 = x*np.cos(phi*np.pi/180) - y*np.sin(phi*np.pi/180)
+    y2 = x*np.sin(phi*np.pi/180) + y*np.cos(phi*np.pi/180)
+    return x2, y2
 
-class wedge:
-    def __init__(self,fname):
-        self.p = load_fit(fname)
+class Wedge:
+    """Object to handle a wedge film thickness distribution"""
+    def _read_rawcal(self, srcfile, wafer):
+        """Search and return a list of [die, measured step] from a file."""
+        with open(srcfile, "r") as f:
+            # search a line for matching wafer wedge calibration
+            while True:
+                line = f.readline()
+                if (wafer in line) and ("wedge calibration" in line):
+                    print("Found wafer:", line)
+                    break
 
-    def set_loc(self, **kwargs):
-        pass
+            # search for local coordinates
+            while True:
+                line = f.readline()
+                if ("x,y" in line) or ("x, y" in line):
+                    self.xloc, self.yloc = map(float,line.split(":")[-1].split(","))
+                    print("Found coordinates:", self.xloc, self.yloc)
+                    break
 
-    def get_rate(self):
-        pass
+            # search for start of step height lines
+            line = f.readline()
+            words = line.split()
+            while (not ns.isnumstr(words[-1])) and (not ns.isnumstr(words[-4])):
+                line = f.readline()
+                words = line.split()
+            
+            # read step heights
+            dies, steps = [], []
+            while len(words) > 4:
+                left, right = line.split(":")
+
+                # get die IDs
+                die_start, die_end = left.split()[-1].split("-")
+                row = die_start[1]
+                col1, col2 = int(die_start[0]), int(die_end[0])
+                if col2 > col1:
+                    dies += [str(n) + row for n in range(col1, col2+1, 1)]
+                else:
+                    dies += [str(n) + row for n in range(col1, col2-1, -1)]
+
+                # get steps
+                steps += [float(s) for s in right.split()]
+
+                line = f.readline()
+                words = line.split()
+
+        print("Found thicknesses:")
+        self.rawdata = _to_table(dies, steps)
+        print(self.rawdata)
+        self.cal_data = pd.DataFrame({"dies": dies, "thicknesses": steps})
+
+    def _rawcal_to_rates(self, deduction, duration):
+        self.cal_data["rates"] = (self.cal_data["thicknesses"] - deduction)/duration
+
+    def _dies_to_coords(self):
+        """Make tables of global coordinates for each die"""
+        self.cal_data["x"] = pd.Series()
+        self.cal_data["y"] = pd.Series()
+        for k,die in enumerate(self.cal_data["dies"]):
+            self.cal_data.loc[k,"x"] = (int(die[0]) - 3.5)*10000 + self.xloc
+            self.cal_data.loc[k,"y"] = (int(die[1]) - 3.5)*10000 + self.yloc
+        print(self.cal_data.head())
+
+    def _fit_rates(self):
+        p0 = [0,0,0,0,0,0,0,0,0] 
+        #xx = np.array([self.x, self.y])
+        #yy = self.rate
+        xx = [self.cal_data["x"], self.cal_data["y"]]
+        yy = self.cal_data["rates"]
+        self.popt, self.pcov = curve_fit(_f, xx, yy, p0)
+        print(self.popt)
+
+    def save_cal(self, calfile):
+        """Save raw and fit wedge data to a file"""
+        output = StringIO()
+
+        output.write("#### Raw calibration data ####\n")
+        self.rawdata.to_csv(output, sep="\t")
+
+        output.write("\n#### Fit parameters ####")
+        np.savetxt(calfile, self.popt, fmt="%.11g", delimiter="\t",
+                   header=output.getvalue())
+
+    def fit(self, *args, **kwargs):
+        """Return fit parameters for the 2-D rate profile.
+        
+        Keyword arguments:
+            srcfile, wafer, duration, deduction, save
+        """
+        try:
+            srcfile = kwargs["srcfile"]
+            wafer = kwargs["wafer"]
+            duration = kwargs["duration"]
+            deduction = kwargs["deduction"]
+            wantsave = kwargs.get("save", False)
+        except:
+            print(self.fit.__doc__)
+            sys.exit(1)
+
+        self._read_rawcal(srcfile, wafer)
+        self._rawcal_to_rates(deduction, duration) 
+        self._dies_to_coords() 
+        self._fit_rates()
+        if wantsave:
+            calfile = kwargs.get("calfile", "{}/wedge_{}.dat".format(defaults.dbroot, wafer)) 
+            self.save_cal(calfile)
+
+    def _get_rate(self, x=0, y=0, angle=0):
+        """Get the rate at the absolute coordinate"""
+        return _f((x,y), *self.popt)
+
+    def _load_chip_design(self, filename):
+        with open(filename, "r") as f:
+            self.chip_design = yaml.load(f)
+
+    def _get_device_coord(self, reticle, device):
+        x = self.chip_design[reticle]["device"][device]["x"]
+        y = self.chip_design[reticle]["device"][device]["y"]
+        return float(x), float(y)
+
+    def _search_dbfile(self, filename):
+        """Return valid path where the db file exists."""
+        if os.path.exists(filename):
+            return filename
+        else:
+            altpath = "{}/{}".format(defaults.dbroot, filename)
+            if os.path.exists(altpath):
+                return altpath
+            else:
+                print("No path found: ", filename)
+                return None
+
+    def get_thickness(self, *args, **kwargs):
+        """
+        Keyword arguments:
+            calfile -- Wedge calibration file
+            reticle 
+            chip -- Chip ID such as "33"
+            device -- Device name on the chip such as "A01"
+            duration -- Scaling factor to convert rate to thickness
+
+        Optional keyword arguments:
+            chip_design_file -- Default: <package dir>/data/chip_design.yaml
+            angle -- Angle in degree to rotate the coordinate. Default: 0
+        """
+        chip_design_file = kwargs.get("chip_design_file",
+                                      "{}/chip_design.yaml".format(defaults.dbroot))
+        reticle = kwargs["reticle"].upper()
+        chip = str(kwargs["chip"])
+        device = kwargs["device"]
+        angle = kwargs.get("angle", 0)
+        duration = kwargs.get("duration", 1)
+
+        # Load fit parameters
+        self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+
+        # Load device info and calculate global device coordinate
+        self._load_chip_design(chip_design_file)
+        xlocal, ylocal = self._get_device_coord(reticle, device)
+        x, y = _get_globxy(int(chip[0]), int(chip[1]), xlocal, ylocal)
+        x, y = _rotate(x, y, angle)
+
+        thickness = self._get_rate(x, y, angle)*duration
+        print(thickness)
+        return thickness
 
 def main(argv):
+    """Entrypoint"""
+    # Register user commands
+    _cmdlist = ["fit", "get_rate", "get_thickness"]
+
+    # process arguments
     if len(argv) < 2:
-        print('Usage:   wedge.py fname col row xlocal ylocal scale [angle]')
-        print('Example: wedge.py Ni_wedge_B160224b.dat 3 3 0 3000 0.5333')
-        print('')
-        print('fname: fit parameter datafile')
-        print('angle: misalignment angle')
-        sys.exit(1)
+        print("Commands: {}\n".format(_cmdlist))
+        sys.exit(0)
 
-    fname = argv[1]
-    col, row, xlocal, ylocal, scale = map(float, argv[2:7])
-    angle = float(argv[7]) if len(argv) > 7 else 0
+    args, kwargs = parse_cmd_argv(argv[1:])
+    cmd = argv[1]
+    if cmd not in _cmdlist:
+        print("Commands: {}\n".format(_cmdlist))
+        sys.exit(0)
 
-    p = load_fit(fname)
-    x0, y0 = get_globxy(col, row, xlocal, ylocal)
-    x, y = rotate(x0, y0, angle*np.pi/180)
-    return get_rate(p, x, y, scale)
-
-#w = Wedge()
-    #w.load_cal(material)
-    #w.fit_cal()
-    #x, y = w.get_globxy(col, row, xlocal, ylocal)
-    #print('x, y, rate = ', x, y, w.get_rate(x, y))
-    #print(w.get_rate(x, y, scale))
-    #w.plot_cal()
-
-if __name__ == '__main__':
-    print(main(sys.argv))
-
+    # Call the corresponding function (command)
+    #globals()[cmd](*args, **kwargs)
+    w = Wedge()
+    getattr(w, cmd)(*args, **kwargs)

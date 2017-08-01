@@ -10,6 +10,9 @@ from io import StringIO
 import ruamel_yaml as yaml
 import os.path
 
+# Register user commands
+_cmdlist = ["fit", "get_rate", "get_thickness"]
+
 def _f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
     """Evaluate 2-d function by: a0*x**2*y**2 + a1*x**2*y + ... + a8
     
@@ -152,9 +155,18 @@ class Wedge:
             calfile = kwargs.get("calfile", "{}/wedge_{}.dat".format(defaults.dbroot, wafer)) 
             self.save_cal(calfile)
 
-    def _get_rate(self, x=0, y=0, angle=0):
+    def get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate"""
-        return _f((x,y), *self.popt)
+        if "calfile" in kwargs:
+            # Directly called by user
+            self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+            x, y = _rotate(x, y, kwargs.get('angle', 0))
+            thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
+            print(thickness)
+            return thickness
+        else:
+            # Called by another method
+            return _f((x,y), *self.popt)
 
     def _load_chip_design(self, filename):
         with open(filename, "r") as f:
@@ -207,22 +219,19 @@ class Wedge:
         x, y = _get_globxy(int(chip[0]), int(chip[1]), xlocal, ylocal)
         x, y = _rotate(x, y, angle)
 
-        thickness = self._get_rate(x, y, angle)*duration
+        thickness = self.get_rate(x, y, angle)*duration
         print(thickness)
         return thickness
 
 def main(argv):
     """Entrypoint"""
-    # Register user commands
-    _cmdlist = ["fit", "get_rate", "get_thickness"]
-
     # process arguments
     if len(argv) < 2:
         print("Commands: {}\n".format(_cmdlist))
         sys.exit(0)
 
-    args, kwargs = parse_cmd_argv(argv[1:])
-    cmd = argv[1]
+    parsed_args = parse_cmd_argv(argv[1:])
+    cmd = argv[0]
     if cmd not in _cmdlist:
         print("Commands: {}\n".format(_cmdlist))
         sys.exit(0)
@@ -230,4 +239,7 @@ def main(argv):
     # Call the corresponding function (command)
     #globals()[cmd](*args, **kwargs)
     w = Wedge()
-    getattr(w, cmd)(*args, **kwargs)
+    if type(parsed_args) is tuple:
+        getattr(w, cmd)(*parsed_args[0], **parsed_args[1])
+    else:
+        getattr(w, cmd)(**parsed_args)

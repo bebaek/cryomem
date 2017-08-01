@@ -1,7 +1,7 @@
 from importlib import import_module
 import sys
 
-_cmdlist = ["wedge2"]
+_cmdlist = ["wedge"]
 
 def _call(cmd, argv):
     """"Import and call subcommand."""
@@ -16,5 +16,5 @@ def main(argv):
         sys.exit(0)
     cmd = argv[1]
     if cmd in _cmdlist:
-        _call(cmd, argv[1:])
+        _call(cmd, argv[2:])
 

@@ -154,6 +154,7 @@ class Wedge:
         if wantsave:
             calfile = kwargs.get("calfile", "{}/wedge_{}.dat".format(defaults.dbroot, wafer)) 
             self.save_cal(calfile)
+        return 0
 
     def get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate"""
@@ -162,7 +163,6 @@ class Wedge:
             self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
             x, y = _rotate(x, y, kwargs.get('angle', 0))
             thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
-            print(thickness)
             return thickness
         else:
             # Called by another method
@@ -209,9 +209,10 @@ class Wedge:
         device = kwargs["device"]
         angle = kwargs.get("angle", 0)
         duration = kwargs.get("duration", 1)
+        calfile = kwargs["calfile"]
 
         # Load fit parameters
-        self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+        self.popt = np.loadtxt(self._search_dbfile(calfile))
 
         # Load device info and calculate global device coordinate
         self._load_chip_design(chip_design_file)
@@ -219,8 +220,7 @@ class Wedge:
         x, y = _get_globxy(int(chip[0]), int(chip[1]), xlocal, ylocal)
         x, y = _rotate(x, y, angle)
 
-        thickness = self.get_rate(x, y, angle)*duration
-        print(thickness)
+        thickness = self.get_rate(x, y, angle=angle)*duration
         return thickness
 
 def main(argv):
@@ -230,8 +230,8 @@ def main(argv):
         print("Commands: {}\n".format(_cmdlist))
         sys.exit(0)
 
-    parsed_args = parse_cmd_argv(argv[1:])
-    cmd = argv[0]
+    cmd = argv[1]
+    parsed_args = parse_cmd_argv(argv[2:])
     if cmd not in _cmdlist:
         print("Commands: {}\n".format(_cmdlist))
         sys.exit(0)
@@ -239,7 +239,11 @@ def main(argv):
     # Call the corresponding function (command)
     #globals()[cmd](*args, **kwargs)
     w = Wedge()
-    if type(parsed_args) is tuple:
-        getattr(w, cmd)(*parsed_args[0], **parsed_args[1])
-    else:
-        getattr(w, cmd)(**parsed_args)
+    try:
+        if type(parsed_args) is tuple:
+            print(getattr(w, cmd)(*parsed_args[0], **parsed_args[1]))
+        else:
+            print(getattr(w, cmd)(**parsed_args))
+    except KeyError:
+        print("Keyerror!")
+        print(getattr(w, cmd).__doc__)

@@ -1,5 +1,6 @@
 import time, sys
 from .dipprobe_base import DipProbeBase
+from cryomem.common.parse_cmd_argv import parse_cmd_argv
 
 class DipProbe(DipProbeBase):
     """Main application methods based on DipProbeBase"""
@@ -9,6 +10,8 @@ class DipProbe(DipProbeBase):
         exception = ()
         #seq_param = self.parse_config(self.config["sequence"]["log"], exception=exception)
         seq_param = self.config.content["sequence"]["log"]
+        for key in kwargs:
+            seq_param[key] = kwargs[key]    # can override config with kwargs
         print(seq_param)
 
         # list of device property names to read
@@ -37,3 +40,19 @@ class DipProbe(DipProbeBase):
             sys.exit()
 
         self.save_data(filename=seq_param["datafile_name"])
+
+def main(argv):
+    """Call a method given by the subcommand and optional parameter arguments."""
+    cmd = argv[1]
+    parsed_args = parse_cmd_argv(argv[2:])
+
+    probe = DipProbe()
+    probe.load_config(file="dipprobe.yaml")
+    #probe.log()
+    if type(parsed_args) is tuple:
+        print(getattr(probe, cmd)(*parsed_args[0], **parsed_args[1]))
+    else:
+        print(getattr(probe, cmd)(**parsed_args))
+
+if __name__ == '__main__':
+    main(sys.argv)

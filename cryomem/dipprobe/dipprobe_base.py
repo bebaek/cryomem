@@ -212,6 +212,6 @@ class DipProbeBase:
         print("Saving data to: {}...".format(datapath))
         #data = self.data
         #np.savetxt(datapath, data, fmt="%.11g", delimiter="\t", header=header)
-        data = self.data.to_string()
+        data = self.data.to_string(float_format='%.11g')
         with open(datapath, 'w') as f:
             f.write(header + '\n' + data + '\n')

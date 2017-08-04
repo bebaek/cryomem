@@ -16,5 +16,4 @@ def main(argv):
         sys.exit(0)
     cmd = argv[1]
     if cmd in _cmdlist:
-        _call(cmd, argv[2:])
-
+        _call(cmd, argv[1:])

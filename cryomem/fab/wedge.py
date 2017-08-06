@@ -1,5 +1,5 @@
 """Fit and estimate wedge film rate distribution."""
-from cryomem.common.parse_cmd_argv import parse_cmd_argv
+#from cryomem.common.parse_cmd_argv import parse_cmd_argv
 import sys
 import cryomem.common.numstr as ns
 import cryomem.common.defaults as defaults
@@ -11,7 +11,7 @@ import ruamel_yaml as yaml
 import os.path
 
 # Register user commands
-_cmdlist = ["fit", "get_rate", "get_thickness"]
+#_cmdlist = ["fit", "get_rate", "get_thickness"]
 
 def _f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
     """Evaluate 2-d function by: a0*x**2*y**2 + a1*x**2*y + ... + a8
@@ -57,6 +57,9 @@ class Wedge:
                 line = f.readline()
                 if (wafer in line) and ("wedge calibration" in line):
                     print("Found wafer:", line)
+
+                    words = line.split()
+                    material = words[words.index('wedge') - 1]
                     break
 
             # search for local coordinates
@@ -97,7 +100,7 @@ class Wedge:
         print("Found thicknesses:")
         self.rawdata = _to_table(dies, steps)
         print(self.rawdata)
-        self.cal_data = pd.DataFrame({"dies": dies, "thicknesses": steps})
+        self.cal_data = pd.DataFrame({'material': material, "dies": dies, "thicknesses": steps})
 
     def _rawcal_to_rates(self, deduction, duration):
         self.cal_data["rates"] = (self.cal_data["thicknesses"] - deduction)/duration
@@ -131,42 +134,46 @@ class Wedge:
         np.savetxt(calfile, self.popt, fmt="%.11g", delimiter="\t",
                    header=output.getvalue())
 
-    def fit(self, *args, **kwargs):
+    def _name_calfile(self, wafer):
+        material = self.cal_data['material']
+        return '{}/wedge_{}_{}.dat'.format(default.dbroot, material, wafer)
+
+    def fit(self, **kwargs):
         """Return fit parameters for the 2-D rate profile.
         
         Keyword arguments:
             srcfile, wafer, duration, deduction, save
         """
-        try:
-            srcfile = kwargs["srcfile"]
-            wafer = kwargs["wafer"]
-            duration = kwargs["duration"]
-            deduction = kwargs["deduction"]
-            wantsave = kwargs.get("save", False)
-        except:
-            print(self.fit.__doc__)
-            sys.exit(1)
+        srcfile = kwargs["srcfile"]
+        wafer = kwargs["wafer"]
+        duration = kwargs["duration"]
+        deduction = kwargs["deduction"]
+        wantsave = kwargs.get("save", False)
 
         self._read_rawcal(srcfile, wafer)
-        self._rawcal_to_rates(deduction, duration) 
-        self._dies_to_coords() 
+        self._rawcal_to_rates(deduction, duration)
+        self._dies_to_coords()
         self._fit_rates()
         if wantsave:
-            calfile = kwargs.get("calfile", "{}/wedge_{}.dat".format(defaults.dbroot, wafer)) 
+            calfile = kwargs.get("calfile", self._name_calfile(wafer))
             self.save_cal(calfile)
         return 0
 
+    def _get_rate(self, x=0, y=0, **kwargs):
+        """Get the rate at the absolute coordinate. Called by another
+        method."""
+        return _f((x,y), *self.popt)
+
     def get_rate(self, x=0, y=0, **kwargs):
-        """Get the rate at the absolute coordinate"""
-        if "calfile" in kwargs:
-            # Directly called by user
-            self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
-            x, y = _rotate(x, y, kwargs.get('angle', 0))
-            thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
-            return thickness
-        else:
-            # Called by another method
-            return _f((x,y), *self.popt)
+        """Get the rate at the absolute coordinate. Called by user.
+        
+        Keyword argument:
+            calfile
+        """
+        self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+        x, y = _rotate(x, y, kwargs.get('angle', 0))
+        thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
+        return thickness
 
     def _load_chip_design(self, filename):
         with open(filename, "r") as f:
@@ -190,26 +197,27 @@ class Wedge:
                 return None
 
     def get_thickness(self, *args, **kwargs):
-        """
+        """Return thickness based on high-level design details.
+
         Keyword arguments:
             calfile -- Wedge calibration file
-            reticle 
+            duration -- Scaling factor to convert rate to thickness
+            reticle -- Reticle ID such as "SF1"
             chip -- Chip ID such as "33"
             device -- Device name on the chip such as "A01"
-            duration -- Scaling factor to convert rate to thickness
 
         Optional keyword arguments:
             chip_design_file -- Default: <package dir>/data/chip_design.yaml
             angle -- Angle in degree to rotate the coordinate. Default: 0
         """
-        chip_design_file = kwargs.get("chip_design_file",
-                                      "{}/chip_design.yaml".format(defaults.dbroot))
+        calfile = kwargs["calfile"]
+        duration = kwargs.get("duration", 1)
         reticle = kwargs["reticle"].upper()
         chip = str(kwargs["chip"])
         device = kwargs["device"]
+        chip_design_file = kwargs.get("chip_design_file",
+                                      "{}/chip_design.yaml".format(defaults.dbroot))
         angle = kwargs.get("angle", 0)
-        duration = kwargs.get("duration", 1)
-        calfile = kwargs["calfile"]
 
         # Load fit parameters
         self.popt = np.loadtxt(self._search_dbfile(calfile))
@@ -220,30 +228,30 @@ class Wedge:
         x, y = _get_globxy(int(chip[0]), int(chip[1]), xlocal, ylocal)
         x, y = _rotate(x, y, angle)
 
-        thickness = self.get_rate(x, y, angle=angle)*duration
+        thickness = self._get_rate(x, y, angle=angle)*duration
         return thickness
 
-def main(argv):
-    """Entrypoint"""
-    # process arguments
-    if len(argv) < 2:
-        print("Commands: {}\n".format(_cmdlist))
-        sys.exit(0)
-
-    cmd = argv[1]
-    parsed_args = parse_cmd_argv(argv[2:])
-    if cmd not in _cmdlist:
-        print("Commands: {}\n".format(_cmdlist))
-        sys.exit(0)
-
-    # Call the corresponding function (command)
-    #globals()[cmd](*args, **kwargs)
-    w = Wedge()
-    try:
-        if type(parsed_args) is tuple:
-            print(getattr(w, cmd)(*parsed_args[0], **parsed_args[1]))
-        else:
-            print(getattr(w, cmd)(**parsed_args))
-    except KeyError:
-        print("Keyerror!")
-        print(getattr(w, cmd).__doc__)
+#def main(argv):
+#    """Entrypoint"""
+#    # process arguments
+#    if len(argv) < 2:
+#        print("Commands: {}\n".format(_cmdlist))
+#        sys.exit(0)
+#
+#    cmd = argv[1]
+#    parsed_args = parse_cmd_argv(argv[2:])
+#    if cmd not in _cmdlist:
+#        print("Commands: {}\n".format(_cmdlist))
+#        sys.exit(0)
+#
+#    # Call the corresponding function (command)
+#    #globals()[cmd](*args, **kwargs)
+#    w = Wedge()
+#    try:
+#        if type(parsed_args) is tuple:
+#            print(getattr(w, cmd)(*parsed_args[0], **parsed_args[1]))
+#        else:
+#            print(getattr(w, cmd)(**parsed_args))
+#    except KeyError:
+#        print("Keyerror!")
+#        print(getattr(w, cmd).__doc__)

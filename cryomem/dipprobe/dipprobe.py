@@ -1,3 +1,4 @@
+"""Measurement control module for Dip Probe"""
 import time, sys
 from .dipprobe_base import DipProbeBase
 from cryomem.common.parse_cmd_argv import parse_cmd_argv

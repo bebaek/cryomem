@@ -100,10 +100,25 @@ class Wedge:
         print("Found thicknesses:")
         self.rawdata = _to_table(dies, steps)
         print(self.rawdata)
-        self.cal_data = pd.DataFrame({'material': material, "dies": dies, "thicknesses": steps})
+        self.cal_meta = {"material": material}
+        self.cal_data = pd.DataFrame({"dies": dies, "thicknesses": steps})
 
-    def _rawcal_to_rates(self, deduction, duration):
-        self.cal_data["rates"] = (self.cal_data["thicknesses"] - deduction)/duration
+    def _rawcal_to_rates(self, deduction, duration, method, **kwargs):
+        if method == "normal":
+            # typical situation: uniform deduction (seed/cap layer)
+            self.cal_data["rates"] = (self.cal_data["thicknesses"] - deduction)/duration
+        elif method == "deductwedge2":
+            for key2 in kwargs:
+                if key2[-1] == "2":     # remove dangling "2" from key
+                    key = key2[:-1]
+                    kwargs[key] = kwargs[key2]
+                    del kwargs[key2]
+
+            for idx in self.cal_data.index:
+                deduction = self.get_rate(self.cal_data.loc[idx,"x"],
+                                          self.cal_data.loc[idx,"y"], **kwargs)
+                self.cal_data["rates"] = (self.cal_data["thicknesses"] - deduction)/duration
+        print(self.cal_data.head())
 
     def _dies_to_coords(self):
         """Make tables of global coordinates for each die"""
@@ -112,7 +127,7 @@ class Wedge:
         for k,die in enumerate(self.cal_data["dies"]):
             self.cal_data.loc[k,"x"] = (int(die[0]) - 3.5)*10000 + self.xloc
             self.cal_data.loc[k,"y"] = (int(die[1]) - 3.5)*10000 + self.yloc
-        print(self.cal_data.head())
+        #print(self.cal_data.head())
 
     def _fit_rates(self):
         p0 = [0,0,0,0,0,0,0,0,0] 
@@ -135,8 +150,8 @@ class Wedge:
                    header=output.getvalue())
 
     def _name_calfile(self, wafer):
-        material = self.cal_data['material']
-        return '{}/wedge_{}_{}.dat'.format(default.dbroot, material, wafer)
+        material = self.cal_meta['material']
+        return '{}/wedge_{}_{}.dat'.format(defaults.dbroot, material, wafer)
 
     def fit(self, **kwargs):
         """Return fit parameters for the 2-D rate profile.
@@ -147,12 +162,19 @@ class Wedge:
         srcfile = kwargs["srcfile"]
         wafer = kwargs["wafer"]
         duration = kwargs["duration"]
-        deduction = kwargs["deduction"]
+        deduction = kwargs.get("deduction", 0)
         wantsave = kwargs.get("save", False)
+        method = kwargs.get("method", "normal")
+
+        # kwargs for unusual situation; deduct extra wedge layer
+        kwargs2 = {}
+        for key in kwargs:
+            if key[-1] == "2":          # grab parameters of the form "xxx2"
+                kwargs2[key] = kwargs[key]
 
         self._read_rawcal(srcfile, wafer)
-        self._rawcal_to_rates(deduction, duration)
         self._dies_to_coords()
+        self._rawcal_to_rates(deduction, duration, method, **kwargs2)
         self._fit_rates()
         if wantsave:
             calfile = kwargs.get("calfile", self._name_calfile(wafer))
@@ -167,8 +189,10 @@ class Wedge:
     def get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate. Called by user.
         
+        Arguments:
+            x, y
         Keyword argument:
-            calfile
+            calfile, angle, duration
         """
         self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
         x, y = _rotate(x, y, kwargs.get('angle', 0))
@@ -196,7 +220,7 @@ class Wedge:
                 print("No path found: ", filename)
                 return None
 
-    def get_thickness(self, *args, **kwargs):
+    def get_thickness(self, **kwargs):
         """Return thickness based on high-level design details.
 
         Keyword arguments:

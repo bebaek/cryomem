@@ -1,56 +1,51 @@
 """Superconducting transition temperature analysis"""
 from numpy.polynomial.chebyshev import chebfit, chebroots
 import numpy as np
-from scipy.optimize import curve_fit, least_squares
+from scipy.optimize import curve_fit
 
-def _slanted_step(x, u):
-    """Slanted step function.
+def _slanted_step(x, a1, b1, a2, b2, a3, b3):
+    """Slanted step fit function.
 
     Sectioned function:
-        a1(u-b1) if u < (a1b1-a2b2)/(a1-a2)
-        a3(u-b3) if u > (a3b3-a2b2)/(a3-a2)
-        a2(u-b2) otherwise
+        a1(x-b1) if x < (a1b1-a2b2)/(a1-a2)
+        a3(x-b3) if x > (a3b3-a2b2)/(a3-a2)
+        a2(x-b2) otherwise
     Conditions:
         b1 < b3
         a1, a3 < a2
         a2 < 1
     """
-    a1, b1, a2, b2, a3, b3 = x
-
     # return sectioned line
-    if hasattr(u, '__iter__'):
-        u1 = (a1*b1 - a2*b2)/(a1 - a2)
-        u3 = (a3*b3 - a2*b2)/(a3 - a2)
+    if hasattr(x, '__iter__'):
+        # constraints
+        if b1 > b3 or a1 > a2 or a3 > a2 or a2 > 1:
+            return np.array([1e5]*len(x))
 
-        idx = u < u1
-        y1 = np.array(a1*(u[idx] - b1))
-
-        idx = np.logical_and(u >= u1, u < u3)
-        y2 = np.array(a2*(u[idx] - b2))
-
-        idx = u >= u3
-        y3 = np.array(a3*(u[idx] - b3))
-
+        x1 = (a1*b1 - a2*b2)/(a1 - a2)
+        x3 = (a3*b3 - a2*b2)/(a3 - a2)
+        y1 = np.array(a1*(x[x <= x1] - b1))
+        y2 = np.array(a2*(x[np.logical_and(x > x1, x < x3)] - b2))
+        y3 = np.array(a3*(x[x >= x3] - b3))
         return np.hstack((y1, y2, y3))
     else:
-        if u <= (a1*b1 - a2*b2)/(a1 - a2):
-            return a1*(u - b1)
-        elif u >= (a3*b3 - a2*b2)/(a3 - a2):
-            return a3*(u - b3)
-        else:
-            return a2*(u - b2)
+        # constraints
+        if b1 > b3 or a1 > a2 or a3 > a2 or a2 > 1:
+            return 1e5
 
-def _residual_step(x, u, y):
-    """Residual function of _slanted_step for fitting"""
-    return _slanted_step(x, u) - y
+        if x <= (a1*b1 - a2*b2)/(a1 - a2):
+            return a1*(x - b1)
+        elif x >= (a3*b3 - a2*b2)/(a3 - a2):
+            return a3*(x - b3)
+        else:
+            return a2*(x - b2)
 
 def _get_transxy(popt):
     """Get transition point x, y of _slanted_step"""
     a1, b1, a2, b2, a3, b3 = popt
     x1 = (a1*b1 - a2*b2)/(a1 - a2)
     x3 = (a3*b3 - a2*b2)/(a3 - a2)
-    y1 = _slanted_step(popt, x1)
-    y3 = _slanted_step(popt, x3)
+    y1 = _slanted_step(x1, *popt)
+    y3 = _slanted_step(x3, *popt)
     return (x1 + x3)/2, (y1 + y3)/2
 
 def _rotate(x, y, angle):
@@ -67,12 +62,12 @@ class T_R_step:
     def fit(self, **kwargs):
         x2, y2 = _rotate(self.T, self.R, -45)
         guess = (-1, 0, 0.9, 14, -1, 1e-6)
-        self.res = least_squares(_residual_step, guess, gtol=1e-14, xtol=1e-14,
-                                 ftol=1e-14, args=(x2, y2))
-        print(self.res)
-        transx, transy = _get_transxy(self.res.x)
-        xy = _rotate(transx, transy, 45)
-        return xy 
+        self.popt0, self.pcov0 = curve_fit(_slanted_step, x2, y2, guess)
+        print(self.popt0, self.pcov0)
+        transx, transy = _get_transxy(self.popt0)
+        res = _rotate(transx, transy, 45)
+        print(res)
+        return res
 
     def testfunc(self):
         import matplotlib.pyplot as plt
@@ -151,15 +146,5 @@ class XCheb:
 
 # debug
 if __name__ == '__main__':
-    import pandas as pd
-    import matplotlib.pyplot as plt
-
-    dfile = '118_T_Vac_B170726_chip23_A13_0.4uAac_asmade.dat'
-    data = pd.read_table(dfile, sep='\s+', comment="#")
-    
-    Tc, Rc = T_R_midx(data['T'], data["Rac_device"]).fit(hsnip=0.2, vsnip=0.2)
-    print("Midx results:", Tc, Rc)
-
-    Tc, Rc = T_R_step(data['T'], data["Rac_device"]).fit()
-    print("Step results:", Tc, Rc)
-
+    a = T_R_step([],[])
+    a.testfunc()

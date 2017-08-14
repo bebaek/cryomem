@@ -20,8 +20,8 @@ def main():
               '       cryomem <command> [<subcommand> --<option1> <value1> <value2> ...]\n'
               '\n'
               'Examples (\'[...]\' means optional):\n'
-              '       cryomem wedge                 : Show help for wedge command\n'
-              '       cryomem wedge get_thickness   : Show help for get_thickness\n'
+              '       cryomem wedge help                : Show help for wedge command\n'
+              '       cryomem wedge get_thickness help  : Show help for get_thickness\n'
           )
         cmdpath = abspath(dirname(abspath(__file__))+"/commands")
         cmdlist = [splitext(split(name)[-1])[0] for name in glob(cmdpath + '/*.py')]

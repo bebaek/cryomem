@@ -8,6 +8,10 @@ class SR830(Interface):
             2e-6, 5e-6, 10e-6, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4,\
             2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1]
 
+    def get_x(self):
+        self.write('OUTP? 1')
+        return float(self.read())
+
     # r = sqrt(x2+y2) in V
     def get_r(self):
         self.write('OUTP? 3')

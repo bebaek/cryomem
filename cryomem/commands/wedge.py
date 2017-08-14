@@ -1,35 +1,46 @@
 """Call methods in fab/wedge.py from command line"""
-from ..fab import wedge
+# Modify the following 3 lines for new command module
+from ..fab import wedge as target_module
+_cmdlist = ["fit", "get_rate", "get_thickness"]
+_target_class = "Wedge"
+
 from ..common.parse_cmd_argv import parse_cmd_argv
 import sys
 
-# Register user commands
-_cmdlist = ["fit", "get_rate", "get_thickness"]
-
 def main(argv):
     # process arguments
-    if len(argv) < 2:
-        print(wedge.__doc__)
+    if len(argv) < 2 or "--help" == argv[1]:
+        print(target_module.__doc__)
         print("Commands: {}\n".format(_cmdlist))
-        sys.exit(0)
+        sys.exit(1)
 
     cmd = argv[1]
+    target_instance = getattr(target_module, _target_class)()
     parsed_args = parse_cmd_argv(argv[2:])
     if cmd not in _cmdlist:
-        print(wedge.__doc__)
-        print("Commands: {}\n".format(_cmdlist))
-        sys.exit(0)
+        print("Command not found:", cmd)
+        sys.exit(1)
+
+    if "--help" in argv[2:]:
+        print(getattr(target_instance, cmd).__doc__)
+        sys.exit(1)
 
     # Call the corresponding function (command)
-    #globals()[cmd](*args, **kwargs)
-    w = wedge.Wedge()
+    """
     try:
         if type(parsed_args) is tuple:
             # list arguments are present
-            print(getattr(w, cmd)(*parsed_args[0], **parsed_args[1]))
+            print(getattr(target_instance, cmd)(*parsed_args[0], **parsed_args[1]))
         else:
             # only keyword arguments are present
-            print(getattr(w, cmd)(**parsed_args))
+            print(getattr(target_instance, cmd)(**parsed_args))
     except KeyError as err:
         print("KeyError: {}".format(err))
-        print(getattr(w, cmd).__doc__)
+        print(getattr(target_instance, cmd).__doc__)
+    """
+    if type(parsed_args) is tuple:
+        # list arguments are present
+        print(getattr(target_instance, cmd)(*parsed_args[0], **parsed_args[1]))
+    else:
+        # only keyword arguments are present
+        print(getattr(target_instance, cmd)(**parsed_args))

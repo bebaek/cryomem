@@ -7,9 +7,11 @@ class DipProbe(DipProbeBase):
     """Main application methods based on DipProbeBase"""
     def log(self, **kwargs):
         """Log measured device parameters"""
+        # load config if not present
+        if not hasattr(self.config, "content"):
+            self.load_config(file=kwargs["config"])
+
         # convert config of this sequence properly
-        exception = ()
-        #seq_param = self.parse_config(self.config["sequence"]["log"], exception=exception)
         seq_param = self.config.content["sequence"]["log"]
         for key in kwargs:
             seq_param[key] = kwargs[key]    # can override config with kwargs

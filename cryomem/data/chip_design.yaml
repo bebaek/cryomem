@@ -1,6 +1,9 @@
 SF1:
   reticle: SF1
   device:
+    grating_rs:
+      x: 2818
+      y: 2160
     A01:
       x: 0
       y: 3000

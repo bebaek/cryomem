@@ -1,5 +1,5 @@
 # Cryomem
-Code for dc transport measurements.
+Python package for experimental superconducting spintronics research.
 
 ## Installation
 Go to the root of the repository where setup.py is located, then run
@@ -12,7 +12,29 @@ To uninstall, run
 pip uninstall cryomem
 ```
 
+You may need to install required packages such as numpy, matplotlib, scipy, etc. In miniconda system, run "conda install <package>" to install a missing package.
+
 ## Usage
+### Command line
+```
+> cryomem
+```
+
+Display help message
+
+```
+> cryomem <command> --help
+```
+
+Display help message for <command>
+
+```
+> cryomem <command> [parameters]
+```
+
+General form. parameters can be a list of arguments followed by keyword arguments. A keyword argument is given by "--<key> <value> [more values]".
+
+### Python script
 Load the code and prompt help as needed:
 ```
 from cryomem.dipprobe.dipprobe import DipProbe
@@ -65,3 +87,6 @@ parameters = {
 probe.load_config(parameters=parameters)
 probe.log()
 ```
+
+### Config file
+dipprobe subpackage has been written to use config files for a wide range of experiment setting. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency.

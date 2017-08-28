@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+from ..common.plotthread import PlotThread
 from importlib import import_module
 from .config import Config
 import os
@@ -156,6 +157,17 @@ class DipProbeBase:
             print("Data:", data.values)
 
     def plot_data(self, xprop, yprop):
+        x, y = self.data[xprop], self.data[yprop]
+        if self.data.shape[0] == 1:
+            # first data point
+            self.pt = PlotThread()
+
+        self.pt.plot(x, y)
+
+    def close_plot(self):
+        self.pt.close()
+
+    def plot_data_old(self, xprop, yprop):
         #tmp = list(zip(*self.data))
         x, y = self.data[xprop], self.data[yprop]
         if self.data.shape[0] == 1:

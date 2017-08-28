@@ -34,15 +34,21 @@ class DipProbe(DipProbeBase):
                 print(tick, seq_param["duration"], val.values)
                 time.sleep(seq_param["delay"])
         except KeyboardInterrupt:
+            # Finish with ctrl-C
             s = input("\nSave data before exit? (y/[n]) ")
             if s.lower() == "y":
                 self.save_data(filename=seq_param["datafile_name"],
                                datafile_increment=seq_param["datafile_increment"])
             else:
                 print("Discarding data.")
+
+            self.close_plot()
             sys.exit()
 
-        self.save_data(filename=seq_param["datafile_name"])
+        # Finish with time out
+        self.save_data(filename=seq_param["datafile_name"],
+                       datafile_increment=seq_param["datafile_increment"])
+        self.close_plot()
 
 def main(argv):
     """Call a method given by the subcommand and optional parameter arguments."""

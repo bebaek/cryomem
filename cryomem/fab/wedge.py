@@ -194,7 +194,8 @@ class Wedge:
         Keyword argument:
             calfile, angle, duration
         """
-        self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+        if "popt" not in dir(self):
+            self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
         x, y = _rotate(x, y, kwargs.get('angle', 0))
         thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
         return thickness

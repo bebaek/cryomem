@@ -4,6 +4,7 @@ import pandas as pd
 from ..common.plotthread import PlotThread
 from importlib import import_module
 from .config import Config
+from ..common.numstr import isnumstr
 import os
 from glob import glob
 
@@ -160,7 +161,8 @@ class DipProbeBase:
         x, y = self.data[xprop], self.data[yprop]
         if self.data.shape[0] == 1:
             # first data point
-            self.pt = PlotThread()
+            plotparams = {"xlabel": xprop, "ylabel": yprop}
+            self.pt = PlotThread(**plotparams)
 
         self.pt.plot(x, y)
 
@@ -202,12 +204,18 @@ class DipProbeBase:
 
         # look for the last number of datafiles and increase it.
         if increment:
-            fnlist = glob(self.dataroot+'\\*.dat')
+            fnlist = glob(os.path.join(self.dataroot,'*.dat'))
             if len(fnlist)==0:
                 n=1
                 print ('1st data!')
             else:
-                n = max([int(fn.split('\\')[-1].split('_')[0]) for fn in fnlist])+1
+                #n = max([int(fn.split('\\')[-1].split('_')[0]) for fn in fnlist])+1
+                tmp = [os.path.basename(fn).split('_')[0] for fn in fnlist]
+                tmp2 = []
+                for s in tmp:
+                    if isnumstr(s):
+                        tmp2.append(int(s))
+                n = max(tmp2) + 1
 
             filename = "{:03n}_{}.{}".format(n, dataname, self.dataext)
             datapath = "{}/{}".format(self.dataroot, filename)

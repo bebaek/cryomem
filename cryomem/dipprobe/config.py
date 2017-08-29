@@ -24,21 +24,29 @@ def parse_config(config, **kwargs):
 
 class Config:
     def __init__(self, **kwargs):
-        pass
+        self.config_file = "config.yaml"
 
     def load_config(self, **kwargs):
+        """Load config from a source specified with a keyword parameter.
+
+        Keyword arguments:
+            parameters -- config dictionary.
+            file -- config (YAML) file path.
+        """
         # Sources of config parameters: argument or file
         if "parameters" in kwargs:
             rawconfig = kwargs["parameters"]
         elif "file" in kwargs:
-            with open(kwargs["file"], "r") as f:
+            self.config_file = kwargs["file"]
+            with open(self.config_file, "r") as f:
                 rawconfig = yaml.load(f)
 
         self.content = parse_config(rawconfig)
         return self.content
 
-    def save_config(self, configfile):
-        with open(configfile, "w") as f:
+    def save_config(self, *args):
+        config_file = args[0] if len(args) > 0 else self.config_file
+        with open(config_file, "w") as f:
             yaml.dump(self.content, f, default_flow_style=False)
 
     def dump_config(self, **kwargs):

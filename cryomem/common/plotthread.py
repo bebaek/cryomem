@@ -7,8 +7,10 @@ class PlotThread:
     """Use an own thread for nonblocking plotting."""
     def __init__(self, **kwargs):
         """Init with keyword arguments for plotting parameters."""
+        self.plotparams = kwargs
         self.xlabel = kwargs.get("xlabel", "x")
         self.ylabel = kwargs.get("ylabel", "y")
+        self.title = kwargs.get("title", "Plot")
 
         self.q = queue.Queue()
         self.thr = threading.Thread(target=self.run, args=(self.q,))
@@ -27,8 +29,10 @@ class PlotThread:
 
     def _setup_plot(self):
         self.plotstyle = "o-"
-        mpl.rcParams["toolbar"] = "None"    # diable toolbar
+        mpl.rcParams["toolbar"] = "None"            # disable toolbar
         self.fig = plt.figure()
+        self.set_wloc()                             # place window
+        self.set_title(self.title)           # set title
         self.ax = self.fig.add_subplot(111)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
@@ -51,6 +55,19 @@ class PlotThread:
         """Finish plotting thread."""
         self.q.put("exit")
         self.thr.join()
+
+    def set_title(self, title):
+        cfm = plt.get_current_fig_manager()
+        cfm.set_window_title(title)
+
+    def set_wloc(self):
+        cfm = plt.get_current_fig_manager()
+        if "wx" in self.plotparams and "wy" in self.plotparams:
+            cfm.window.geometry("+{}+{}".format(self.plotparams["wx"], self.plotparams["wy"]))
+
+    def get_wloc(self):
+        cfm = plt.get_current_fig_manager()
+        return map(int, cfm.window.geometry().split("+")[1:])
 
 def demo():
     import numpy as np

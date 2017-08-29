@@ -64,47 +64,25 @@ class DipProbeBase:
         self.dataroot = "data"
         self.dataext = "dat"
         self.config = Config()
+        self.prog_config = Config()
 
     def help(self, *args):
         print("Not implemented yet.")
 
     def load_config(self, **kwargs):
-        return self.config.load_config(**kwargs)
+        """Load program and user config files."""
+        # Load program config file if exists
+        prog_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "dipprobe.yaml")
+        try:
+            self.prog_config.load_config(file=prog_config_file)
+        except:
+            print("No program config file found.")
+            self.prog_config.load_config(parameters={})
 
-#    def load_config(self, **kwargs):
-#        # Sources of config parameters: argument or file
-#        if "parameters" in kwargs:
-#            self.rawconfig = kwargs["parameters"]
-#        elif "file" in kwargs:
-#            with open(kwargs["file"], "r") as f:
-#                self.rawconfig = yaml.load(f)
-#
-#        self.config = parse_config(self.rawconfig)
-#
-#    def save_config(self, configfile):
-#        with open(configfile, "w") as f:
-#            yaml.dump(self.config, f, default_flow_style=False)
-#
-#    def parse_config(self, config, **kwargs):
-#        """Return a copy of config with some strings converted"""
-#        result = copy.deepcopy(config)
-#
-#        # Recursively reduce down to basic element
-#        if type(result) is list:
-#            for k, config2 in enumerate(result):
-#                result[k] = self.parse_config(config2, **kwargs)
-#        elif type(result) is dict:
-#            for key in result:
-#                result[key] = self.parse_config(result[key], **kwargs)
-#        #elif isnumstr(result):
-#        #    # Try to convert a number string to int or float
-#        #    result = numstr2num(result)
-#        elif type(result) is str:
-#            # Try to convert a number with a unit to a scaled int or float
-#            result = convert_num_with_unit(result)
-#
-#        return result
-#
+        # Load user config file
+        self.config.load_config(**kwargs)
+        return 0
+
     def create_devprop(self, prop):
         """Create device property object (data)
 
@@ -161,12 +139,22 @@ class DipProbeBase:
         x, y = self.data[xprop], self.data[yprop]
         if self.data.shape[0] == 1:
             # first data point
-            plotparams = {"xlabel": xprop, "ylabel": yprop}
+            plotparams = {"xlabel": xprop, "ylabel": yprop, "title": "Plot: Dip Probe"}
+            if "wx" in self.prog_config.content and "wy" in self.prog_config.content:
+                plotparams["wx"] = self.prog_config.content["wx"]
+                plotparams["wy"] = self.prog_config.content["wy"]
             self.pt = PlotThread(**plotparams)
 
         self.pt.plot(x, y)
 
     def close_plot(self):
+        """Clean up plotting thread."""
+        # Get plotting window location and save
+        wx, wy = self.pt.get_wloc()
+        self.prog_config.content["wx"] = wx
+        self.prog_config.content["wy"] = wy
+        self.prog_config.save_config()
+
         self.pt.close()
 
     def plot_data_old(self, xprop, yprop):

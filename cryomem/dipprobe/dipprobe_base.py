@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 #import matplotlib.pyplot as plt
-from ..common.plotthread import PlotThread
+#from ..common.plotthread import PlotThread
+from ..common.plotproc import PlotProc
 from importlib import import_module
 from .config import Config
 from ..common.numstr import isnumstr
@@ -139,23 +140,23 @@ class DipProbeBase:
         x, y = self.data[xprop], self.data[yprop]
         if self.data.shape[0] == 1:
             # first data point
-            plotparams = {"xlabel": xprop, "ylabel": yprop, "title": "Plot: Dip Probe"}
+            plotparams = {"xlabel": xprop, "ylabel": yprop, "title": "Plot - Dip Probe"}
             if "wx" in self.prog_config.content and "wy" in self.prog_config.content:
                 plotparams["wx"] = self.prog_config.content["wx"]
                 plotparams["wy"] = self.prog_config.content["wy"]
-            self.pt = PlotThread(**plotparams)
+            self.plotter = PlotProc(**plotparams)
 
-        self.pt.plot(x, y)
+        self.plotter.plot(x, y)
 
     def close_plot(self):
         """Clean up plotting thread."""
         # Get plotting window location and save
-        wx, wy = self.pt.get_wloc()
+        wx, wy = self.plotter.get_wloc()
         self.prog_config.content["wx"] = wx
         self.prog_config.content["wy"] = wy
         self.prog_config.save_config()
 
-        self.pt.close()
+        self.plotter.close()
 
     def plot_data_old(self, xprop, yprop):
         #tmp = list(zip(*self.data))

@@ -1,6 +1,6 @@
 import threading, queue
 import matplotlib as mpl
-mpl.use("tkagg")
+mpl.use("qt5agg")
 import matplotlib.pyplot as plt
 
 class PlotThread:

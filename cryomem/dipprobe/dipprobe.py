@@ -43,12 +43,13 @@ class DipProbe(DipProbeBase):
                 print("Discarding data.")
 
             self.close_plot()
-            sys.exit()
+            return tick
 
         # Finish with time out
         self.save_data(filename=seq_param["datafile_name"],
                        datafile_increment=seq_param["datafile_increment"])
         self.close_plot()
+        return tick
 
 def main(argv):
     """Call a method given by the subcommand and optional parameter arguments."""

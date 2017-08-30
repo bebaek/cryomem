@@ -151,7 +151,8 @@ class DipProbeBase:
     def close_plot(self):
         """Clean up plotting thread."""
         # Get plotting window location and save
-        wx, wy = self.plotter.get_wloc()
+        wloc = self.plotter.get_wloc()
+        wx, wy = wloc
         self.prog_config.content["wx"] = wx
         self.prog_config.content["wy"] = wy
         self.prog_config.save_config()

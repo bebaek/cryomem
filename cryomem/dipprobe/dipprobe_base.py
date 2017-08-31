@@ -8,6 +8,7 @@ from .config import Config
 from ..common.numstr import isnumstr
 import os
 from glob import glob
+from pathlib import Path
 
 class DeviceProp:
     """Class for a device measurement property"""
@@ -73,7 +74,8 @@ class DipProbeBase:
     def load_config(self, **kwargs):
         """Load program and user config files."""
         # Load program config file if exists
-        prog_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "dipprobe.yaml")
+        #prog_config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "dipprobe.yaml")
+        prog_config_file = os.path.join(str(Path.home()), ".dipprobe.yaml")
         try:
             self.prog_config.load_config(file=prog_config_file)
         except:

@@ -72,7 +72,7 @@ class _Plotter(mp.Process):
         self.line = self.ax.plot(x, y, self.plotstyle)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
-        #plt.tight_layout()
+        plt.tight_layout()
         plt.pause(0.1)
 
     def _set_title(self, title):

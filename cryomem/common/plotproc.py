@@ -22,23 +22,15 @@ class _Plotter(mp.Process):
         """Loop"""
         self._setup_plot(**self.kwargs)
         while True:
-            try:
-                msg = ("None",)
-                msg = self.q_in.get(block=True)
-
+            if self.q_in.empty():
+                plt.pause(0.1)
+            else:
+                msg = self.q_in.get()
                 if msg[0] == "exit":
                     plt.close(self.fig)
                     break
                 else:
                     self._process_msg(msg)
-                    #self._update_plot(msg)
-            except (queue.Empty, KeyboardInterrupt):
-                pass
-
-            try:
-                plt.pause(0.1)
-            except KeyboardInterrupt:
-                pass
 
     def _process_msg(self, msg):
         """Process the argument tuple, of which 1st element is the command."""

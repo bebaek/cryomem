@@ -1,7 +1,8 @@
 """Measurement control module for Dip Probe"""
 import time, sys
 from .dipprobe_base import DipProbeBase
-from cryomem.common.parse_cmd_argv import parse_cmd_argv
+from ..common.parse_cmd_argv import parse_cmd_argv
+from ..common.keyinput import KeyInput
 
 class DipProbe(DipProbeBase):
     """Main application methods based on DipProbeBase"""
@@ -16,14 +17,18 @@ class DipProbe(DipProbeBase):
         for key in kwargs:
             seq_param[key] = kwargs[key]    # can override config with kwargs
         print(seq_param)
+        print("Hit q to finish cleanly.")
+        with KeyInput() as keyin:
+            time.sleep(3)
+            if keyin.getch() == "q": return 1
 
-        # list of device property names to read
-        v = seq_param["read"]
-        val = self.get_dev_val(v)   # dummy read
+            # list of device property names to read
+            v = seq_param["read"]
+            val = self.get_dev_val(v)   # dummy read
 
-        # Measurement loop
-        tick = -1
-        try:
+            # Measurement loop
+            tick = -1
+        #try:
             while tick < seq_param["duration"]:
                 val = self.get_dev_val(v)
                 self.append_data(val, tmpfile=True, show=False)
@@ -33,17 +38,18 @@ class DipProbe(DipProbeBase):
                 tick = val[0] - tick0
                 print(tick, seq_param["duration"], val.values)
                 time.sleep(seq_param["delay"])
-        except KeyboardInterrupt:
-            # Finish with ctrl-C
-            s = input("\nSave data before exit? (y/[n]) ")
-            if s.lower() == "y":
-                self.save_data(filename=seq_param["datafile_name"],
-                               datafile_increment=seq_param["datafile_increment"])
-            else:
-                print("Discarding data.")
+        #except KeyboardInterrupt:
+        #    # Finish with ctrl-C
+                if keyin.getch() == "q":
+                    s = input("\nSave data before exit? (y/[n]) ")
+                    if s.lower() == "y":
+                        self.save_data(filename=seq_param["datafile_name"],
+                                       datafile_increment=seq_param["datafile_increment"])
+                    else:
+                        print("Discarding data.")
 
-            self.close_plot()
-            return tick
+                    self.close_plot()
+                    return tick
 
         # Finish with time out
         self.save_data(filename=seq_param["datafile_name"],

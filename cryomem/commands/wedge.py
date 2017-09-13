@@ -1,7 +1,7 @@
 """Call methods in fab/wedge.py from command line"""
 # Modify the following 3 lines for new command module
 from ..fab import wedge as target_module
-_cmdlist = ["fit", "get_rate", "get_thickness"]
+_cmdlist = ["fit", "get_rate", "plot", "get_thickness"]
 _target_class = "Wedge"
 
 from ..common.parse_cmd_argv import parse_cmd_argv

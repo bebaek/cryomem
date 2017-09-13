@@ -1,0 +1,64 @@
+device:
+  R_thermometer:
+    name: Thermometer resistance
+    unit: K
+    read_module: cryomem.tnminstruments.KT2001
+    read_class: KT2001
+    read_class_keyword_arguments:
+      interface: gpib11
+    read_method: read_R4W
+  Rac_device:
+    name: Device lock-in amplitude
+    unit: V
+    read_module: cryomem.tnminstruments.SR830
+    read_class: SR830
+    read_class_keyword_arguments:
+      interface: gpib9
+    read_method: get_x
+  t:
+    name: Time
+    unit: s
+    read_module: time
+    read_method: time
+  T:
+    name: Temperature
+    unit: K
+    read_module: cryomem.dipprobe.thermometer
+    read_class: Cernox
+    read_class_keyword_arguments:
+      serial: X104724
+    read_method: get_temperature
+    input_variable: R_thermometer
+  B:
+    name: Field bias
+    unit: T
+    #write_module: cryomem.tnminstruments.mock
+    #write_class: Mock
+    write_module: cryomem.tnminstruments.DT9854
+    write_class: DT9854
+    write_method: set_vout
+    write_method_keyword_arguments:
+      channel: 0
+    divisors:
+      B_per_I: 0.0674
+      I_per_V: -2.11
+    max: 0.4
+    step: 0.000025
+    delay: 0.001
+sequence:
+  log:
+    datafile_increment: yes
+    datafile_name: T_Vac_B170814b_chip15_A07_40nAac_asmade
+    delay: 2 s
+    duration: 3600 s
+    read:
+    - t
+    - R_thermometer
+    - Rac_device
+    - T
+    plot_prop:
+    - T
+    - Rac_device
+  set_device:
+    val: 0
+

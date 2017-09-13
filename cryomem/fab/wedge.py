@@ -1,5 +1,4 @@
-"""Fit and estimate wedge film rate distribution."""
-#from cryomem.common.parse_cmd_argv import parse_cmd_argv
+"""Fit and estimate wedge film rate distribution. Spatial units are micrometer."""
 import sys
 import cryomem.common.numstr as ns
 import cryomem.common.defaults as defaults
@@ -9,19 +8,16 @@ from scipy.optimize import curve_fit
 from io import StringIO
 import ruamel_yaml as yaml
 import os.path
-
-# Register user commands
-#_cmdlist = ["fit", "get_rate", "get_thickness"]
+import matplotlib.pyplot as plt
 
 def _f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
     """Evaluate 2-d function by: a0*x**2*y**2 + a1*x**2*y + ... + a8
-    
+
     Parameters:
     coord: (x,y): (float, float)
     a0,...,a8: float
     """
     x, y = coord
-    #return a*x**2 + b*x*y + c*y**2 + d
     return a0*x**2*y**2 + a1*x**2*y + a2*x**2 \
             + a3*x*y**2 + a4*x*y + a5*x \
             + a6*y**2 + a7*y + a8
@@ -52,15 +48,28 @@ class Wedge:
     def _read_rawcal(self, srcfile, wafer):
         """Search and return a list of [die, measured step] from a file."""
         with open(srcfile, "r") as f:
-            # search a line for matching wafer wedge calibration
-            while True:
-                line = f.readline()
-                if (wafer in line) and ("wedge calibration" in line):
-                    print("Found wafer:", line)
+            print("Source file:", srcfile)
 
-                    words = line.split()
-                    material = words[words.index('wedge') - 1]
-                    break
+            # search a line for matching wafer wedge calibration
+            found = False
+            for line in f:
+                if wafer in line:
+                    line_lc = line.lower()
+                    if "wedge" in line_lc:
+                        kw = "wedge"
+                        found = True
+                    elif "rate" in line_lc:
+                        kw = "rate"
+                        found = True
+
+                    if found:
+                        print("Found wafer:", line)
+                        words = line.split()
+                        material = words[words.index(kw) - 1]
+                        break
+            if not found:
+                print("Not found:", wafer)
+                return -1
 
             # search for local coordinates
             while True:
@@ -76,7 +85,7 @@ class Wedge:
             while (not ns.isnumstr(words[-1])) and (not ns.isnumstr(words[-4])):
                 line = f.readline()
                 words = line.split()
-            
+
             # read step heights
             dies, steps = [], []
             while len(words) > 4:
@@ -131,8 +140,6 @@ class Wedge:
 
     def _fit_rates(self):
         p0 = [0,0,0,0,0,0,0,0,0] 
-        #xx = np.array([self.x, self.y])
-        #yy = self.rate
         xx = [self.cal_data["x"], self.cal_data["y"]]
         yy = self.cal_data["rates"]
         self.popt, self.pcov = curve_fit(_f, xx, yy, p0)
@@ -155,7 +162,7 @@ class Wedge:
 
     def fit(self, **kwargs):
         """Return fit parameters for the 2-D rate profile.
-        
+
         Keyword arguments:
             srcfile, wafer, duration, deduction, save
         """
@@ -172,7 +179,10 @@ class Wedge:
             if key[-1] == "2":          # grab parameters of the form "xxx2"
                 kwargs2[key] = kwargs[key]
 
-        self._read_rawcal(srcfile, wafer)
+        status = self._read_rawcal(srcfile, wafer)
+        if status == -1:
+            print("_rawcal_to_rates() failed.")
+            sys.exit(-1)
         self._dies_to_coords()
         self._rawcal_to_rates(deduction, duration, method, **kwargs2)
         self._fit_rates()
@@ -188,7 +198,7 @@ class Wedge:
 
     def get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate. Called by user.
-        
+
         Arguments:
             x, y
         Keyword argument:
@@ -199,6 +209,28 @@ class Wedge:
         x, y = _rotate(x, y, kwargs.get('angle', 0))
         thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
         return thickness
+
+    def plot(self, **kwargs):
+        """Plot rate distribution.
+
+        Keyword arguments:
+            calfile
+        """
+        if "popt" not in dir(self):
+            self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
+        n = 100
+        x = np.linspace(-30000, 30000, n)
+        y = np.linspace(-30000, 30000, n)
+        rate = np.empty([n, n])
+        for k, yy in enumerate(y):
+            rate[k] = np.array(self.get_rate(x, yy))
+        plt.pcolor(x, y, rate)
+        plt.xlabel("x (um)")
+        plt.ylabel("y (um)")
+        plt.colorbar()
+        plt.tight_layout()
+        plt.show()
+        return 0
 
     def _load_chip_design(self, filename):
         with open(filename, "r") as f:

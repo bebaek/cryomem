@@ -13,10 +13,18 @@ device:
     name: Time
     read_method: time
     read_module: time
+  B:
+    name: Field bias
+    unit: T
+    instrument: DT9854
+    write_method: set_vout
+    channel: 0
+    B_per_I: 0.0674
+    I_per_V: -2.11
+    I_max: 8
 sequence:
   log:
     datafile_increment: yes
-    #datafile_name: Rtherm_Vlockin_MLS170719_Nb200nm_4w_2uAac_manualup
     datafile_name: t_T_cooling
     delay: 5 s
     duration: 20 s

@@ -1,5 +1,5 @@
 # Cryomem
-Python package for experimental superconducting spintronics research.
+Python library/command utilities for Cryomem research project. The package includes test/measurment control code as well as useful analysis code. Routine utility code is accessible from the command line. Since analysis is often done case by case, relevant code is used from a python script (often from Jupyter Notebook).
 
 ## Installation
 Go to the root of the repository where setup.py is located, then run
@@ -12,27 +12,26 @@ To uninstall, run
 pip uninstall cryomem
 ```
 
-You may need to install required packages such as numpy, matplotlib, scipy, etc. In miniconda system, run "conda install <package>" to install a missing package.
+You may need to install required packages including numpy, matplotlib, scipy, pandas, clr. In miniconda system, run ```conda install <package>``` first and then, if not available from conda, ```pip search <package>``` then ```pip install <package>```.
 
 ## Usage
 ### Command line
+Although the package is basically a library, some functions/methods can be run from the command line. This is the recommended usage for routine test/measurement works.
+
+Display help message:
 ```
 > cryomem
 ```
 
-Display help message
-
+Display help message for \<command>
 ```
 > cryomem <command> --help
 ```
 
-Display help message for <command>
-
+General form. \<parameters> is a list of arguments followed by keyword arguments. A keyword argument is given by ```--<key> <value> [more values]```.
 ```
-> cryomem <command> [parameters]
+> cryomem <command> [<parameters>]
 ```
-
-General form. parameters can be a list of arguments followed by keyword arguments. A keyword argument is given by "--<key> <value> [more values]".
 
 ### Python script
 Load the code and prompt help as needed:
@@ -89,4 +88,12 @@ probe.log()
 ```
 
 ### Config file
-dipprobe subpackage has been written to use config files for a wide range of experiment setting. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency.
+Subpackage dipprobe has been written to use config files extensively for test/measurement settings. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency. See ```cryomem/test/dipprobe/testconfig.yaml``` for an example.
+
+A config file is loaded from the command line by a parameter
+
+```--config <config file>```
+
+or from a python script by calling a method:
+
+```<obj>.load_config(file=<config file>)```

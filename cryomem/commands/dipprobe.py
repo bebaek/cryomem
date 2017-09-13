@@ -1,7 +1,7 @@
 """Call methods in dipprobe/dipprobe.py from command line"""
 # Modify the following 3 lines for new command module
 from ..dipprobe import dipprobe as target_module
-_cmdlist = ["log"]
+_cmdlist = ["log", "set_device"]
 _target_class = "DipProbe"
 
 from ..common.parse_cmd_argv import parse_cmd_argv

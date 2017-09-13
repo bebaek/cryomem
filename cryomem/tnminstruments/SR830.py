@@ -2,8 +2,8 @@ from .base import Interface
 
 class SR830(Interface):
     """SRS lock-in"""
-    def __init__(self, iface_str):
-        super().__init__(iface_str)
+    def __init__(self, interface="gpib0"):
+        super().__init__(interface)
         self.vsens = [2e-9, 5e-9, 10e-9, 2e-8, 5e-8, 10e-8, 2e-7, 5e-7, 10e-7,\
             2e-6, 5e-6, 10e-6, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4,\
             2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1]

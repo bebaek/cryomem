@@ -1,3 +1,10 @@
+def isint(s):
+    try:
+        val = int(s)
+        return True
+    except ValueError:
+        return False
+
 def isfloat(s):
     try:
         val = float(s)
@@ -20,7 +27,9 @@ def str2bool(s):
 
 # Convert value types to: float, bool, string 
 def str2other(s):
-    if isfloat(s):
+    if isint(s):
+        val = int(s)
+    elif isfloat(s):
         val = float(s)
     elif isbool(s):
         val = str2bool(s)

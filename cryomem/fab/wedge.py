@@ -43,6 +43,10 @@ def _rotate(x, y, phi):
     y2 = x*np.sin(phi*np.pi/180) + y*np.cos(phi*np.pi/180)
     return x2, y2
 
+def _offset(x, y, xoffset=0, yoffset=0):
+    """Return x + xoffset, y + yoffset."""
+    return x + xoffset, y + yoffset
+
 class Wedge:
     """Object to handle a wedge film thickness distribution"""
     def _read_rawcal(self, srcfile, wafer):
@@ -106,9 +110,8 @@ class Wedge:
                 line = f.readline()
                 words = line.split()
 
-        print("Found thicknesses:")
         self.rawdata = _to_table(dies, steps)
-        print(self.rawdata)
+        print("Found thicknesses:\n", self.rawdata)
         self.cal_meta = {"material": material}
         self.cal_data = pd.DataFrame({"dies": dies, "thicknesses": steps})
 
@@ -139,7 +142,7 @@ class Wedge:
         #print(self.cal_data.head())
 
     def _fit_rates(self):
-        p0 = [0,0,0,0,0,0,0,0,0] 
+        p0 = [0,0,0,0,0,0,0,0,0]
         xx = [self.cal_data["x"], self.cal_data["y"]]
         yy = self.cal_data["rates"]
         self.popt, self.pcov = curve_fit(_f, xx, yy, p0)
@@ -207,6 +210,9 @@ class Wedge:
         if "popt" not in dir(self):
             self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
         x, y = _rotate(x, y, kwargs.get('angle', 0))
+        x, y = _offset(x, y, xoffset=kwargs.get("xoffset", 0),
+                       yoffset=kwargs.get("yoffset", 0))
+
         thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
         return thickness
 
@@ -266,6 +272,8 @@ class Wedge:
         Optional keyword arguments:
             chip_design_file -- Default: <package dir>/data/chip_design.yaml
             angle -- Angle in degree to rotate the coordinate. Default: 0
+            xoffset, yoffset -- x, y offsets in micrometer from regular 6x6
+            design.
         """
         calfile = kwargs["calfile"]
         duration = kwargs.get("duration", 1)
@@ -275,6 +283,8 @@ class Wedge:
         chip_design_file = kwargs.get("chip_design_file",
                                       "{}/chip_design.yaml".format(defaults.dbroot))
         angle = kwargs.get("angle", 0)
+        xoffset = kwargs.get("xoffset", 0)
+        yoffset = kwargs.get("yoffset", 0)
 
         # Load fit parameters
         self.popt = np.loadtxt(self._search_dbfile(calfile))
@@ -284,6 +294,7 @@ class Wedge:
         xlocal, ylocal = self._get_device_coord(reticle, device)
         x, y = _get_globxy(int(chip[0]), int(chip[1]), xlocal, ylocal)
         x, y = _rotate(x, y, angle)
+        x, y = _offset(x, y, xoffset=xoffset, yoffset=yoffset)
 
         thickness = self._get_rate(x, y, angle=angle)*duration
         return thickness

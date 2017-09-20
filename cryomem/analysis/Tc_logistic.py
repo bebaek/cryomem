@@ -172,7 +172,7 @@ def test3():
     dfiles = glob.glob("*.dat")
     for dfile in dfiles:
         data = pd.read_table(dfile, sep='\s+', comment="#")
-        x, y = (data['T'], data["Rac_device"])
+        x, y = (data['T'], data["Vac_device"])
         plt.plot(x, y, "o", label=dfile)
         plt.legend(loc=2)
 

@@ -30,7 +30,11 @@ elif _platform == "Windows":
         def getch(self):
             """Return the key if pressed or None."""
             if kbhit():
-                return getch().decode()
+                try:
+                    return getch().decode()
+                except UnicodeDecodeError:
+                    print("Invalid key unicode. Ignoring...")
+                    return None
             else:
                 return None
 

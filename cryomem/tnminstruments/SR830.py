@@ -47,6 +47,14 @@ class SR830(Interface):
         self.write('AUXV %d,%7.3f'%(ch,voltage))    # 1 mV resolution
         print ('AUXV %d,%7.3f'%(ch,voltage), flush=True)
 
+    # conform with yaml configs
+    def set_auxvout(self, voltage, channel=-1):
+        v_actual = "%7.3f"%(voltage)
+        msg = 'AUXV %d,%s'%(channel, v_actual)
+        self.write(msg)
+        print(msg)
+        return v_actual
+
     def get_auxvout(self, ch):
         self.write('AUXV? %d'%ch)
         msg = self.read()

@@ -4,6 +4,7 @@ import matplotlib as mpl
 mpl.use("tkagg")
 import matplotlib.pyplot as plt
 import time
+from .plothyst import plothyst
 
 #def _f_proc(q, **kwargs):
 #    """Process target function"""
@@ -36,6 +37,7 @@ class _Plotter(mp.Process):
         """Process the argument tuple, of which 1st element is the command."""
         if msg[0] == "plot":
             self._update_plot(msg[1:])
+            #self._update_plot2(msg[1:])
         elif msg[0] == "get_wloc":
             self.q_out.put(self._get_wloc())
         else:
@@ -62,6 +64,16 @@ class _Plotter(mp.Process):
         x, y = msg[0], msg[1]
         self.ax.cla()
         self.line = self.ax.plot(x, y, self.plotstyle)
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_ylabel(self.ylabel)
+        plt.tight_layout()
+        plt.pause(0.1)
+
+    def _update_plot2(self, msg):
+        x, y = msg[0], msg[1]
+        self.ax.cla()
+        #self.line = self.ax.plot(x, y, self.plotstyle)
+        self.line = plothyst(x, y, self.plotstyle)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         plt.tight_layout()

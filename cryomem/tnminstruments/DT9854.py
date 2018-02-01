@@ -29,6 +29,7 @@ class DT9854:
     def set_vout(self, voltage, channel=-1):
         #print("Voltage:", voltage)
         self.AOutss.SetSingleValueAsVolts(channel, voltage)
+        return voltage
     
 if __name__ == '__main__':
     import sys,time

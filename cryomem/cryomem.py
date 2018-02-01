@@ -23,6 +23,7 @@ def show_help():
       )
     cmdpath = abspath(dirname(abspath(__file__))+"/commands")
     cmdlist = [splitext(split(name)[-1])[0] for name in glob(cmdpath + '/*.py')]
+    cmdlist.remove("__init__")
     print("Commands: {}\n".format(cmdlist))
 
 def main():

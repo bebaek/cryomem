@@ -1,8 +1,8 @@
-"""Call methods in dipprobe/dipprobe.py from command line"""
+"""Call methods in analysis/fit_airypat_datafile.py from command line"""
 # Modify the following 3 lines for new command module
-from ..dipprobe import dipprobe as target_module
-_cmdlist = ["log", "set_device", "sweep"]
-_target_class = "DipProbe"
+from ..analysis import fit_airypat_datafile as target_module
+_cmdlist = ["run"]
+_target_class = "FitAiryPat"
 
 from ..common.parse_cmd_argv import parse_cmd_argv
 import sys

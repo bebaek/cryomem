@@ -20,10 +20,13 @@ class Tc_datafile:
         else:
             print("No supported format:", filename)
 
-    def _plot_data(self):
+    def _open_figure(self):
         self.fig = plt.figure(1)
         self.ax = self.fig.add_subplot(111)
-        plothyst(self.x, self.y)
+
+    def _plot_data(self):
+        #plothyst(self.x, self.y)
+        plt.plot(self.x, self.y, "o")
 
     def _fit(self):
         self.fitter = T_R_genlogistic(self.x, self.y)
@@ -32,8 +35,6 @@ class Tc_datafile:
     def _plot_fit(self):
         xf, yf = self.fitter.build_fitcurve()  # Plot fit curve
         plt.plot(xf, yf, "-")
-        plt.show()
-        #plt.pause(1)
 
     def _get_result(self):
         Tc, Rc, perr = self.fit_results
@@ -43,14 +44,26 @@ class Tc_datafile:
         """Load and fit from datafile.
 
         Keyword arguments:
-            datafile -- string
+            datafile -- string or array-like of string
         """
-        self._load_data(kwargs["datafile"])
-        self._plot_data()
-        self._fit()
-        self._plot_fit()
+        datafiles = kwargs["datafile"]
+        if not hasattr(datafiles, "__iter__"):
+            datafiles = (kwargs["datafile"])
+
+        # Fit multiple datafiles
+        self._open_figure()
+        results = []
+        for datafile in datafiles:
+            self._load_data(datafile)
+            self._plot_data()
+            self._fit()
+            self._plot_fit()
+            results = results + [self._get_result()]
+
+        # Wait for user to close figure
+        plt.show()
         try:
-            return self._get_result()
+            return results
         except NameError:
             return None
 

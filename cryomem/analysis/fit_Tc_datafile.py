@@ -47,8 +47,8 @@ class Tc_datafile:
             datafile -- string or array-like of string
         """
         datafiles = kwargs["datafile"]
-        if not hasattr(datafiles, "__iter__"):
-            datafiles = (kwargs["datafile"])
+        if type(datafiles) == str:
+            datafiles = [datafiles]
 
         # Fit multiple datafiles
         self._open_figure()

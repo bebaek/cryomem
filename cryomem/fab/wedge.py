@@ -240,7 +240,8 @@ class Wedge:
 
     def _load_chip_design(self, filename):
         with open(filename, "r") as f:
-            self.chip_design = yaml.load(f)
+            #self.chip_design = yaml.load(f)
+            self.chip_design = yaml.safe_load(f)
 
     def _get_device_coord(self, reticle, device):
         x = self.chip_design[reticle]["device"][device]["x"]

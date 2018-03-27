@@ -16,7 +16,10 @@ class Tc_datafile:
         fileformat = self._get_format(filename)
         if fileformat == "0.1_dipprobe_T_V":
             data = pd.read_table(filename, sep='\s+', comment="#")
-            self.x, self.y = (data['T'], data["Vac_device"])
+            if "Vac_device" in data:
+                self.x, self.y = (data['T'], data["Vac_device"])
+            else:
+                self.x, self.y = (data['T'], data["Rac_device"])
         else:
             print("No supported format:", filename)
 

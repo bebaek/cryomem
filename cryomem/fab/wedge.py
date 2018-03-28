@@ -230,7 +230,8 @@ class Wedge:
         rate = np.empty([n, n])
         for k, yy in enumerate(y):
             rate[k] = np.array(self.get_rate(x, yy))
-        plt.pcolor(x, y, rate)
+        #plt.pcolor(x, y, rate)
+        plt.contourf(x, y, rate)
         plt.xlabel("x (um)")
         plt.ylabel("y (um)")
         plt.colorbar()

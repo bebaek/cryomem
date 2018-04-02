@@ -220,7 +220,7 @@ class Wedge:
         """Plot rate distribution.
 
         Keyword arguments:
-            calfile
+            calfile, ncontour
         """
         if "popt" not in dir(self):
             self.popt = np.loadtxt(self._search_dbfile(kwargs["calfile"]))
@@ -231,7 +231,7 @@ class Wedge:
         for k, yy in enumerate(y):
             rate[k] = np.array(self.get_rate(x, yy))
         #plt.pcolor(x, y, rate)
-        plt.contourf(x, y, rate)
+        plt.contourf(x, y, rate, kwargs.get("ncontour", 10))
         plt.xlabel("x (um)")
         plt.ylabel("y (um)")
         plt.colorbar()

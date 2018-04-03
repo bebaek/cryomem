@@ -235,6 +235,7 @@ class Wedge:
         plt.xlabel("x (um)")
         plt.ylabel("y (um)")
         plt.colorbar()
+        plt.grid(True)
         plt.tight_layout()
         plt.show()
         return 0

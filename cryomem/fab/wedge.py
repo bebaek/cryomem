@@ -18,9 +18,25 @@ def _f(coord, a0, a1, a2, a3, a4, a5, a6, a7, a8):
     a0,...,a8: float
     """
     x, y = coord
-    return a0*x**2*y**2 + a1*x**2*y + a2*x**2 \
+    res = a0*x**2*y**2 + a1*x**2*y + a2*x**2 \
             + a3*x*y**2 + a4*x*y + a5*x \
             + a6*y**2 + a7*y + a8
+    return res
+
+def _f2(coord, *a):
+    """Evaluate 2-d function by: a[0]*x**n*y**n + a[1]*x**n*y**(n-1) + ...
+
+    Parameters:
+    coord: (x,y): (float, float)
+    a[0], a[1], ..., a[k]: float. Polynomial coefficients. k should be the
+    square of (order+1) (such as 9 for order 2).
+    """
+    x, y    = coord
+    n       = int(np.sqrt(len(a)) - 1)     # polynomial order
+    #print("_f2 is in use.")
+    res = np.sum([a[(n + 1)*k + l]*x**(n - k)*y**(n - l)
+                   for k in range(n + 1) for l in range(n + 1)], axis=0)
+    return res
 
 def _to_table(xys, vals):
     """Make a DataFrame from xy as columns and indices"""
@@ -148,6 +164,13 @@ class Wedge:
         self.popt, self.pcov = curve_fit(_f, xx, yy, p0)
         print(self.popt)
 
+    def _fit_rates2(self, fitorder):
+        p0 = [0 for k in range((fitorder + 1)**2)]
+        xx = [self.cal_data["x"], self.cal_data["y"]]
+        yy = self.cal_data["rates"]
+        self.popt, self.pcov = curve_fit(_f2, xx, yy, p0)
+        print(self.popt)
+
     def save_cal(self, calfile):
         """Save raw and fit wedge data to a file"""
         output = StringIO()
@@ -167,14 +190,15 @@ class Wedge:
         """Return fit parameters for the 2-D rate profile.
 
         Keyword arguments:
-            srcfile, wafer, duration, deduction, save
+            srcfile, wafer, duration, [deduction, fitorder, save]
         """
-        srcfile = kwargs["srcfile"]
-        wafer = kwargs["wafer"]
-        duration = kwargs["duration"]
-        deduction = kwargs.get("deduction", 0)
-        wantsave = kwargs.get("save", False)
-        method = kwargs.get("method", "normal")
+        srcfile     = kwargs["srcfile"]
+        wafer       = kwargs["wafer"]
+        duration    = kwargs["duration"]
+        deduction   = kwargs.get("deduction", 0)
+        fitorder    = kwargs.get("fitorder", 2)
+        wantsave    = kwargs.get("save", False)
+        method      = kwargs.get("method", "normal")
 
         # kwargs for unusual situation; deduct extra wedge layer
         kwargs2 = {}
@@ -188,7 +212,8 @@ class Wedge:
             sys.exit(-1)
         self._dies_to_coords()
         self._rawcal_to_rates(deduction, duration, method, **kwargs2)
-        self._fit_rates()
+        #self._fit_rates()
+        self._fit_rates2(fitorder)
         if wantsave:
             calfile = kwargs.get("calfile", self._name_calfile(wafer))
             self.save_cal(calfile)
@@ -197,7 +222,7 @@ class Wedge:
     def _get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate. Called by another
         method."""
-        return _f((x,y), *self.popt)
+        return _f2((x,y), *self.popt)
 
     def get_rate(self, x=0, y=0, **kwargs):
         """Get the rate at the absolute coordinate. Called by user.
@@ -213,7 +238,8 @@ class Wedge:
         x, y = _offset(x, y, xoffset=kwargs.get("xoffset", 0),
                        yoffset=kwargs.get("yoffset", 0))
 
-        thickness = _f((x,y), *self.popt)*kwargs.get('duration', 1)
+        #thickness = _f2((x,y), *self.popt)*kwargs.get('duration', 1)
+        thickness = self._get_rate(x, y)*kwargs.get('duration', 1)
         return thickness
 
     def plot(self, **kwargs):

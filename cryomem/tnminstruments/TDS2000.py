@@ -1,47 +1,29 @@
-"""
-Created on Thu Jan 31 10:59:49 2013
-
-@author: BB
-"""
-
+from .base import Interface
 from time import sleep
 import numpy as np
 import struct
-try:
-    import serial
-except:
-    print('pyserial is not installed. RS232 won\'t work.')
 
-porttds2000 = 4   # 5 -> COM4
-
-class TDS2000:
-    def __init__(self, **kwargs):
-        port = kwargs.get('port', porttds2000)
-        to = kwargs.get('timeout', 20)
-        self.verbose = kwargs.get('verbose', False)
-        self.port = port
+class TDS2000(Interface):
+    """Tektronics oscilloscope"""
+    def __init__(self, interface="com0"):
+        super().__init__(interface)
         self.ndata = 2500
-        self.ser = serial.Serial(self.port, 19200, bytesize=8, timeout=to)
         self.write('*CLS')
-        self.write('*ESR?')
-        #print (self.ser.readline())
-        print(self.read())
-        self.write('ALLEV?')
-        #print (self.ser.readline())
-        print(self.read())
+        print(self.query('*ESR?'))
+        print(self.query('ALLEV?'))
         #vscale_div = {.002: 1000, .005:400, .01:200, .02:100, .05:40,\
         #        .1:20, .2:10, .5:100, 1:50, 2:25, 5:10}
 
-    def write(self, msg):
-        msg2 = (msg+'\n').encode('utf-8')
-        if self.verbose:
-            print(msg2)
-        self.ser.write(msg2)
-        sleep(0.1)
+    #def write(self, msg):
+    #    msg2 = (msg+'\n').encode('utf-8')
+    #    if self.verbose:
+    #        print(msg2)
+    #    self.ser.write(msg2)
+    #    sleep(0.1)
 
-    def read(self):
-        return self.ser.readline().decode('utf-8')
-        
+    #def read(self):
+    #    return self.ser.readline().decode('utf-8')
+
     def acquiresingle(self):
         self.write('ACQ:STOPA SEQ')
         self.write('ACQ:STATE ON')
@@ -135,27 +117,11 @@ class TDS2000:
         print ('COM%d closed.'%(self.port+1))
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv)<3:
-        print ('Usage 1: python serialinstruments.py')
-        print ('Usage 2: python serialinstruments.py <filename (no ext)> <channel>')
-        dev = TDS2000()
-        print (dev.getwfmparam(1))
-        dev.close()
-        print ('Exiting...')
-        sys.exit(0)
-
-    fn = sys.argv[1]+'.dat'
-    ch = int(sys.argv[2])
-    dev = TDS2000()
+    dev = TDS2000("com3")
     dev.setdatafmtascii()
+    ch = 1
     param = dev.getwfmparam(ch)
     print (param)
     wfm = dev.gettraceascii(ch)
     print (wfm[:40], '...')
-    f = open(fn,'w')
-    f.write(param)
-    f.write(wfm)
-    f.close()
-    dev.close()
-    print ('Read and saved waveform channel %d.'%ch)
+    print ('Read waveform channel %d.'%ch)

@@ -1,0 +1,2 @@
+1;8;BIN;RI;MSB;2500;"Ch1, AC coupling, 5.0E-2 V/div, 5.0E-4 s/div, 2500 points, Average mode";Y;2.0E-6;0;-2.5E-3;"s";2.0E-3;0.0E0;-5.0E0;"Volts"
+1;8;BIN;RI;MSB;2500;"Ch2, DC coupling, 2.0E0 V/div, 5.0E-4 s/div, 2500 points, Average mode";Y;2.0E-6;0;-2.5E-3;"s";8.0E-2;0.0E0;0.0E0;"Volts"

@@ -1,0 +1,102 @@
+device:
+  R_thermometer:
+    name: Thermometer resistance
+    unit: K
+    read_module: cryomem.tnminstruments.KT2001
+    read_class: KT2001
+    read_class_keyword_arguments:
+      interface: gpib11
+    read_method: read_R4W
+  Vac_device:
+    name: Device lock-in amplitude
+    unit: V
+    read_module: cryomem.tnminstruments.SR830
+    read_class: SR830
+    read_class_keyword_arguments:
+      interface: gpib9
+    read_method: get_x
+  t:
+    name: Time
+    unit: s
+    read_module: time
+    read_method: time
+  T:
+    name: Temperature
+    unit: K
+    read_module: cryomem.dipprobe.thermometer
+    read_class: Cernox
+    read_class_keyword_arguments:
+      serial: X104724
+    read_method: get_temperature
+    input_variable: R_thermometer
+  B:
+    name: Field bias
+    unit: T
+    #write_module: cryomem.tnminstruments.mock
+    #write_class: Mock
+    write_module: cryomem.tnminstruments.SR830
+    write_class: SR830
+    write_class_keyword_arguments:
+      interface: gpib9
+    write_method: set_auxvout
+    write_method_keyword_arguments:
+      channel: 1
+    divisors:
+      B_per_I: 0.0674
+      I_per_V: -2.0
+    max: 0.4
+    step: 0.0005
+    delay: 0.001
+  IV:
+    name: IV trace
+    type: array
+    n_components: 2
+    component_type: float64
+    unit:
+    - A
+    - V
+    read_module: cryomem.dipprobe.scope
+    read_class: Scope
+    read_class_keyword_arguments:
+      model: tds2000
+      interface: com3
+      channels:
+      - 1
+      - 2
+      average: 32
+    read_method: read_iv
+    read_method_keyword_arguments:
+      bias_resistance: 500
+      voltage_gain: 1000
+sequence:
+  log:
+    datafile_increment: yes
+    datafile_name: T_Vac_B180123_chip36_A04_100nAac_asmade
+    delay: 2
+    duration: 3600
+    read:
+    - t
+    - R_thermometer
+    - Vac_device
+    - T
+    plot_prop:
+    - T
+    - Vac_device
+  set_device:
+    val: 0
+  sweep:
+    datafile_increment: yes
+    datafile_name: test
+    delay: 2
+    sweep:
+    - B
+    read:
+    - t
+    - IV
+    plot_prop:
+    - B
+    - IV
+    save:
+    - B
+    - IV
+    save_format: bin

@@ -8,8 +8,14 @@ def isGPIB(s):
             return True
     return False
 
+def isserial(s):
+    if len(s) > 3:                  # check if serial ("COM1")
+        if s[:3].upper() == "COM":
+            return True
+    return False
+
 def isDLL(s):
-    pass
+    return False
 
 class Interface:
     """Dynamically define interface methods/parameters.
@@ -20,21 +26,22 @@ class Interface:
         """Interpret interface string and return dictionary holding created
         interface object (with address included).
         """
-        # GPIB
-        if isGPIB(interface):              # check if GPIB is called ("gpibN")
+        # GPIB (gpibN)
+        if isGPIB(interface):
             unit = 0                       # normally 0 (single card)
             addr = int(interface[4:])
-            if addr >= 0 and addr < 31:
-                #try:
-                    # Instantiate GPIB and assign user methods
-                    from .visa import GPIB
-                    # debug
-                    #test = GPIB(unit, addr)
-                    #test.write("*IDN?")
-                    #print(test.read())
-                    self._set_interface(GPIB(unit, addr))
-                #except:
-                #    print("Interface failure: GPIB, " + interface)
+            import visa
+            rm = visa.ResourceManager()
+            rm.list_resources()
+            self._set_interface(
+                rm.open_resource("GPIB{}::{}::INSTR".format(unit, addr)))
+
+        # serial (comN)
+        elif isserial(interface):
+            import visa
+            rm = visa.ResourceManager()
+            rm.list_resources()
+            self._set_interface(rm.open_resource(interface))
 
         # DLL interface driver
         elif isDLL(interface):
@@ -52,6 +59,7 @@ class Interface:
         self._iface = iface_obj
         self.write = self._iface.write
         self.read = self._iface.read
+        self.query = self._iface.query
 
 #def isfake(s):
 #    if s.lower() == "fake":

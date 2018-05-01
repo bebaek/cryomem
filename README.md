@@ -1,5 +1,5 @@
 # Cryomem
-Python library/command utilities for Cryomem research project. The package includes test/measurment control code as well as useful analysis code. Routine utility code is accessible from the command line. Since analysis is often done case by case, relevant code is used from a python script (often from Jupyter Notebook).
+Python library/command utilities for Cryomem research project. The package includes test/measurment control code as well as useful analysis code. Routine utility functions/methods are also executable directly from the command line. More involving analyses can be done by importing from a script/Jupyter notebook.
 
 ## Installation
 Go to the root of the repository where setup.py is located, then run
@@ -12,7 +12,12 @@ To uninstall, run
 pip uninstall cryomem
 ```
 
-You may need to install required packages including numpy, matplotlib, scipy, pandas, clr. In miniconda system, run ```conda install <package>``` first and then, if not available from conda, ```pip search <package>``` then ```pip install <package>```.
+You may need to install required packages including numpy, matplotlib, scipy, pandas. In miniconda system, run ```conda install <package>``` first and then, if not available from conda, ```pip search <package>``` then ```pip install <package>```.
+
+To upgrade the version, cd to the new source and run
+```
+pip install -e . -U
+```
 
 ## Usage
 ### Command line
@@ -20,7 +25,7 @@ Although the package is basically a library, some functions/methods can be run f
 
 Display help message:
 ```
-> cryomem
+> cryomem [--help]
 ```
 
 Display help message for \<command>
@@ -92,8 +97,39 @@ Subpackage dipprobe has been written to use config files extensively for test/me
 
 A config file is loaded from the command line by a parameter
 
-```--config <config file>```
+```
+--config <config file>
+```
 
 or from a python script by calling a method:
 
-```<obj>.load_config(file=<config file>)```
+```
+<obj>.load_config(file=<config file>)
+```
+
+### Implemented functions
+- dipprobe DAQ
+  - Instrument control: GPIB, RS232, USB dll.
+  - Superconducting R-T
+  - JJ B-I-V
+- YAML configuration file management
+- Zip-format datafile management
+- Fit:
+  - Superconducting R-T
+  - JJ I-V: RSJ, AH
+  - JJ B-Ic: Airy pattern
+  - Magnetic JJ d-Ic (clean limit)
+
+## Development
+
+### Structure
+Subpackages are intended to be independent from each other except "common" subpackage. Example subpackages:
+- common: shared utility code
+- data: static data requiring frequent access (ex: thickness calibration)
+- analysis: data analysis including fit.
+- dipprobe: new dipprobe control code
+- fab: fab-related code (ex. thickness calibration)
+- cmtools: old dipprobe control code
+
+### Command line execution
+The entrypoint is "cryomem.py". The run commands are registered around its beginning in a dictionary "cmd_params".

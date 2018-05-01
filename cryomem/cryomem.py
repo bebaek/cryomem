@@ -1,6 +1,20 @@
 """
 Main user command line executable. Just runs subpackage main commands.
 """
+# Define commands for command line run
+cmd_params = {
+    "fit":      {"module": "cryomem.analysis.fit_datafile",
+                 "function": "fit_datafile"},
+    "conv_tdsbin": {"module": "cryomem.common.datafile",
+                 "function": "conv_tdsbin"},
+
+    "wedge":    {"module": "cryomem.fab.wedge", "class": "Wedge",
+                 "methods": ["fit", "get_rate", "plot", "get_thickness"]},
+
+    "cmdaq":    {"module": "cryomem.cmtools.lib.daq_dipstick",
+                 "functions": ["reset", "set_dccurrent", "set_field", "set_heat",
+                 "set_sweepvolt", "get_vitrace_vs_h_i", "get_v_dvdi_vs_h_i"]}
+}
 
 import sys
 from importlib import import_module
@@ -8,23 +22,24 @@ from os.path import abspath, dirname, splitext, split
 from glob import glob
 from .common.parse_cmd_argv import parse_cmd_argv
 
-# Define commands for command line run
-cmd_params = {
-    "fit":      {"module": "cryomem.analysis.fit_datafile", "function":
-                "fit_datafile"},
-    "conv_tdsbin": {"module": "cryomem.common.datafile", "function":
-                "conv_tdsbin"},
-
-    "wedge":    {"module": "cryomem.fab.wedge", "class": "Wedge",
-                "methods": ["fit", "get_rate", "plot", "get_thickness"]},
-}
+def _run(runner, parsed_args):
+    """Run function/method and return the result."""
+    if type(parsed_args) is tuple:      # list and keyword arguments
+        res = runner(*parsed_args[0], **parsed_args[1])
+        if "q" not in parsed_args[1]:
+            print(res)
+    else:                               # only keyword arguments
+        res = runner(**parsed_args)
+        if "q" not in parsed_args:
+            print(res)
+    return res
 
 def call(argv):
     """"Import and call a module as a subcommand. Deprecated."""
     mod = import_module("cryomem.commands.{}".format(argv[1]))
     getattr(mod, "main")(argv[1:])
 
-def call2(argv):
+def _call2(argv):
     """Call a command defined by cmd_params above."""
     command = argv[1]
     if command in cmd_params:
@@ -44,14 +59,7 @@ def call2(argv):
 
         # Run!
         parsed_args = parse_cmd_argv(argv[2:])
-        if type(parsed_args) is tuple:      # list and keyword arguments
-            res = runner(*parsed_args[0], **parsed_args[1])
-            if "q" not in parsed_args[1]:   # --q: quiet option
-                print(res)
-        else:                               # only keyword arguments
-            res = runner(**parsed_args)
-            if "q" not in parsed_args:
-                print(res)
+        res = _run(runner, parsed_args)
 
     # case 2: call method (subcommand) in a class (command)
     elif "class" in cmd_params[command]:
@@ -72,16 +80,29 @@ def call2(argv):
             else:
                 # Run!
                 parsed_args = parse_cmd_argv(argv[3:])
-                if type(parsed_args) is tuple:      # list and keyword arguments
-                    res = runner(*parsed_args[0], **parsed_args[1])
-                    if "q" not in parsed_args[1]:
-                        print(res)
-                else:                               # only keyword arguments
-                    res = runner(**parsed_args)
-                    if "q" not in parsed_args:
-                        print(res)
+                res = _run(runner, parsed_args)
 
-def show_help():
+    # case 3: call function (subcommand) in the module (command)
+    else:
+        functions = cmd_params[command]["functions"]
+
+        # show available methods and exit
+        if argv[2] == "--help":
+            print("Commands: {}\n".format(functions))
+            sys.exit(1)
+
+        # Process subcommand
+        if argv[2] in functions:
+            runner = getattr(mod, argv[2])    # "subcommand"
+            if argv[3] == "--help":
+                print(runner.__doc__)
+                sys.exit(1)
+            else:
+                # Run!
+                parsed_args = parse_cmd_argv(argv[3:])
+                res = _run(runner, parsed_args)
+
+def _show_help():
     print('\n'
           'Usage: cryomem\n'
           '       cryomem <command> [<subcommand> --<option1> <value1> <value2> ...]\n'
@@ -101,14 +122,14 @@ def show_help():
 def main():
     """Entrypoint"""
     if len(sys.argv) < 2:
-        show_help()
+        _show_help()
         sys.exit(0)
 
     if sys.argv[1] == "--help":
-        show_help()
+        _show_help()
         sys.exit(0)
 
-    call2(sys.argv)
+    _call2(sys.argv)
 
 if __name__ == '__main__':
     main()

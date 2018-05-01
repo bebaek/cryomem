@@ -52,10 +52,7 @@ device:
     type: array
     n_components: 2
     component_type: float64
-    unit:
-    - A
-    - V
-    read_module: cryomem.dipprobe.scope
+    read_module: cryomem.dipprobe2.scope
     read_class: Scope
     read_class_keyword_arguments:
       model: tds2000
@@ -65,9 +62,24 @@ device:
       - 2
       average: 32
     read_method: read_iv
-    read_method_keyword_arguments:
+  I:
+    name: Current
+    read_module: cryomem.dipprobe2.scope
+    read_class: IV2I
+    read_class_keyword_arguments:
+      index: 0
       bias_resistance: 500
+    read_method: get_I
+    input_variable: IV
+  V:
+    name: Voltage
+    read_module: cryomem.dipprobe2.scope
+    read_class: IV2V
+    read_class_keyword_arguments:
+      index: 1
       voltage_gain: 1000
+    read_method: get_V
+    input_variable: IV
 sequence:
   log:
     datafile_increment: yes
@@ -93,10 +105,10 @@ sequence:
     read:
     - t
     - IV
-    plot_prop:
-    - B
-    - IV
+    - I
+    - V
     save:
     - B
-    - IV
-    save_format: bin
+    - I
+    - V
+    save_format: zip

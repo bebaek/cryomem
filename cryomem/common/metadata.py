@@ -7,7 +7,7 @@ import copy
 import ruamel_yaml as yaml
 from .numstr import numstr2num
 import collections
-from io import StringIO, TextIOWrapper
+from io import TextIOBase       # Covers StringIO, TextIOWrapper
 
 def parse_md(md, **kwargs):
     """Return a copy of metadata with some strings converted"""
@@ -35,22 +35,12 @@ def load_md(src):
     Arguments:
         src: dict-like (data), string (filename), or file-like
     """
-    # Sources of config parameters: argument or file
-    #if "parameters" in kwargs:
-    #    rawconfig = kwargs["parameters"]
-    #elif "fname" in kwargs:
-    #    with open(kwargs["fname"], "r") as f:
-    #        rawconfig = yaml.load(f)
-    #elif "fobj" in kwargs:
-    #    rawconfig = yaml.load(kwargs["fobj"])
-
     if isinstance(src, collections.Mapping):            # dict or yaml is given
         rawconfig = src
-    elif isinstance(src, str):                              # filename is given
+    elif isinstance(src, str):                          # filename is given
         with open(src, "r") as f:
             rawconfig = yaml.load(f)
-    elif (isinstance(src, TextIOWrapper) or
-         isinstance(src, StringIO)):    # file is given
+    elif (isinstance(src, TextIOBase)):                # file-like is given
         rawconfig = yaml.load(src)
 
     return parse_md(rawconfig)
@@ -65,8 +55,7 @@ def save_md(dest, md):
     if isinstance(dest, str):                           # filename is given
         with open(dest, "w") as f:
             yaml.dump(md, f, default_flow_style=False)
-    elif (isinstance(dest, TextIOWrapper) or
-         isinstance(dest, StringIO)):                 # file-like is given
+    elif (isinstance(dest, TextIOBase)):                # file-like is given
         yaml.dump(md, dest, default_flow_style=False)
 
 def dump_md(md, **kwargs):

@@ -1,0 +1,3 @@
+data path root = ../dipstick
+data folder = 150330_Fe-Ni
+output file tag = 

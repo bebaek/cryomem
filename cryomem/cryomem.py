@@ -8,11 +8,13 @@ from os.path import abspath, dirname, splitext, split
 from glob import glob
 from .common.parse_cmd_argv import parse_cmd_argv
 
+# Define commands for command line run
 cmd_params = {
     "fit":      {"module": "cryomem.analysis.fit_datafile", "function":
                 "fit_datafile"},
     "conv_tdsbin": {"module": "cryomem.common.datafile", "function":
                 "conv_tdsbin"},
+
     "wedge":    {"module": "cryomem.fab.wedge", "class": "Wedge",
                 "methods": ["fit", "get_rate", "plot", "get_thickness"]},
 }

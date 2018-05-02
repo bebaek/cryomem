@@ -4,7 +4,7 @@ from scipy.optimize import curve_fit
 from ..common.datacondition import deglitch
 
 class CurveFitter1D:
-    """1-dim curve fitting tool class"""
+    """1-dim curve fitting tool class. Unnecessary abstraction. To be deprecated."""
     def __init__(self, x=[0], y=[0], func=lambda x: 0):
         """Load data and fit function.
 

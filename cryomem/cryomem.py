@@ -3,7 +3,7 @@ Main user command line executable. Just runs subpackage main commands.
 """
 # Define commands for command line run
 cmd_params = {
-    "fit":      {"module": "cryomem.analysis.fit_datafile",
+    "fit_datafile":      {"module": "cryomem.analysis.fit_datafile",
                  "function": "fit_datafile"},
     "conv_tdsbin": {"module": "cryomem.common.datafile",
                  "function": "conv_tdsbin"},

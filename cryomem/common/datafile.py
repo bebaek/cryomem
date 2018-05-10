@@ -134,7 +134,8 @@ def save_data(fname, data, mode="w", **kwargs):
     root, ext = os.path.splitext(fname)
 
     if dftype == "zip" or ext.lower() == "zip":
-        with zipfile.ZipFile(root + ".zip", mode, zipfile.ZIP_DEFLATED) as zf:
+        dfname = root + ".zip"
+        with zipfile.ZipFile(dfname, mode, zipfile.ZIP_DEFLATED) as zf:
             # save data
             for tag in data:
                 s = BytesIO()            # StringIO does not work for py3
@@ -145,10 +146,12 @@ def save_data(fname, data, mode="w", **kwargs):
             # save md
             if md != None:
                 s = StringIO()
-                print("Saving md.")
                 foname  = "md.txt"
                 metadata.save_md(s, md)                 # to mem
                 zf.writestr(foname, s.getvalue())         # to zip
+    else:
+        dfname = None
+    return dfname
 
 def conv_tdsbin(finame, foname=None):
     """Convert old tdsbin (BIarrVarr) datafile to zipped txt files.
@@ -160,5 +163,4 @@ def conv_tdsbin(finame, foname=None):
     data, md = load_tdsbin(finame)
     if foname == None:
         foname = finame
-    save_data(foname, data, "w", md=md)
-    return 0
+    return save_data(foname, data, "w", md=md)

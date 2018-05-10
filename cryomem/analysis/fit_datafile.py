@@ -5,8 +5,10 @@ from ..common import datafile
 from . import jjivarray2
 from . import jj_curves
 from scipy.optimize import curve_fit
+from collections import OrderedDict
 import numpy as np
 import os.path
+from copy import deepcopy
 
 def _get_fit_intention(fi, **kwargs):
     intention = {"save": False}                 # Default
@@ -25,6 +27,8 @@ def _get_fit_intention(fi, **kwargs):
 
 def fit_IarrVarr_RSJ(data, md=None, **kwargs):
     """Fit IVs to RSJ model and return fit parameter arrays as data dict."""
+    func = lambda _i, icp, icn, r, vo: \
+            jj_curves.V_RSJ_asym(_i, icp, icn, r, 0, vo)
     kwargs2 = {}
     kwargs2['model'] = "rsj_asym"
     kwargs2['io'] = io = kwargs.get('io', 0)
@@ -39,10 +43,14 @@ def fit_IarrVarr_RSJ(data, md=None, **kwargs):
     Iarr, Varr = data["Iarr"], data["Varr"]
     popt_arr, pcov_arr = jjivarray2.fit2rsj_arr(Iarr, Varr, **kwargs2)
 
-    # Build a new data dictionary with fit parameters
-    datao = {}
-    for k, key in enumerate(["Ic", "Rn", "I0", "V0"]):
+    # Build a new data ordereddict with fit parameters
+    datao = OrderedDict()
+    for k, key in enumerate(["Icp", "Icn", "Rn", "V0"]):
         datao[key] = popt_arr[:,k]
+
+    # Add extra info to md
+    md["fitfunc"]   = func
+    md["fitx"]      = data["Iarr"]
     return datao, md
 
 def fit_BIc_Airypat(data, md=None, **param):
@@ -51,25 +59,30 @@ def fit_BIc_Airypat(data, md=None, **param):
     Arguments:
         data, md=None
     Keyword arguments:
-        start, end: integer. Index start and end values for fit.
-        guess: dictionary. {"Ic": float, "Bcen": float, "Bnod": float}
+        istart, iend:       integer. Index start and end values for fit.
+        Icp0, Bcen0, Bnod0:    float. Fit guess
     Return:
         datao, md: dictionary or None
     """
-    end2        = param["end"] if "end" in param else len(data["Ic"])
-    ind         = range(param.get("start", 0), end2)
-    x, y        = data["Bapp"][ind], data["Ic"][ind]
+    ind        = range(param.get("istart", 0), param.get("iend", len(data["Bapp"])))
+    x, y        = data["Bapp"][ind], data["Icp"][ind]
     func        = jj_curves.airypat_easy
 
-    # Process guess
-    Ic0         = param.get("Ic", np.amax(y))
+    # Make quick guess and fit
+    Ic0         = param.get("Icp0", np.amax(y))
     ind2        = y > Ic0*0.9
-    Bcen0       = param.get("Bcen", np.mean(x[ind2]))
+    Bcen0       = param.get("Bcen0", np.mean(x[ind2]))
     Bmax        = np.max(np.abs(x))
-    Bnod0       = param.get("Hnod", Bcen0 + (Bmax - np.abs(Bcen0))*0.5)
+    Bnod0       = param.get("Bnod0", Bcen0 + (Bmax - np.abs(Bcen0))*0.5)
     guess       = [Ic0, Bcen0, Bnod0]
     popt, pcov  = curve_fit(func, x, y, guess)
-    datao       = {"Ic": popt[0], "Bcen": popt[1], "Bnod": popt[2]}
+    Rn          = np.mean(data['Rn'])   # often needed for IcRn eval
+    datao       = OrderedDict([("Icp", popt[0]), ("Bcen", popt[1]),
+                               ("Bnod", popt[2]), ('Rn', Rn)])
+
+    # Add extra info to md
+    md["fitfunc"]   = func
+    md["fitx"]      = x
     return datao, md
 
 def fit_datafile(fi, **kwargs):
@@ -80,26 +93,33 @@ def fit_datafile(fi, **kwargs):
     Keyword arguments:
         fo: Output filename. Default: fi.
         model: Fit model. Default: RSJ.
+        The rest is handed over to the called fitting function.
+    Return:
+        data, md, fit_function
     """
     # Find intention
     intention   = _get_fit_intention(fi, **kwargs)
-    root, ext   = os.path.splitext(fi)
-    fo          = kwargs.get("fo", "{}_{}.{}".format(
-                  intention["model"], root, ext))
+    head, tail  = os.path.split(fi)
+    root, ext   = os.path.splitext(tail)
+    fo          = kwargs.get("fo", os.path.join(head, "{}_{}{}".format(
+                  intention["model"], root, ext)))
 
     data, md    = datafile.load_data(fi)
 
     # Choose and run proper fit function
     if intention["data"] == "BIarrVarr_JJ":
-        if intention["model"] == "RSJ":
-            datao, md = fit_IarrVarr_RSJ(data, md=md, **kwargs)
+        if intention["model"]   == "RSJ":
+            datao, md  = fit_IarrVarr_RSJ(data, md=md, **kwargs)
         elif intention["model"] == "Airypat":
-            datao, md = fit_BIc_Airypat(data, md=md, **kwargs)
+            datao, md  = fit_BIc_Airypat(data, md=md, **kwargs)
 
-    # Save fit results and md. Existing fit file will be overwritten.
+    # If fit results are arrays, save to file.
     if intention["save"]:
         for key in intention["bundle"]:
             datao[key] = data[key]
-        datafile.save_data(fo, datao, md=md)
+
+        # Cannot directly save the added md elements: fitfunc, fitx
+        md2 = deepcopy(md); del md2["fitfunc"]; del md2["fitx"]
+        datafile.save_data(fo, datao, md=md2)
 
     return datao, md

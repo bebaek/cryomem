@@ -16,3 +16,17 @@ def airypat_easy(x, *p):
     """
     p1 = 3.81/np.pi/(np.abs(p[1] - p[2]))
     return airypat(x, p[0], p1, p[1])
+
+def V_RSJ_asym(i, ic_pos, ic_neg, rn, io, vo):
+    """Return voltage with asymmetric Ic's in RSJ model"""
+    if ic_pos < 0 or ic_neg > 0 or rn < 0:
+        #or abs(ic_neg/ic_pos) > 1.2 or abs(ic_pos/ic_neg) > 1.2 :
+        # set boundaries for fitting
+        #pass
+        v = 1e10
+    else:
+        v = np.zeros(len(i))
+        n = i>io+ic_pos; v[n] = rn*np.sqrt((i[n]-io)**2-ic_pos**2)+vo
+        n = i<io+ic_neg; v[n] = -rn*np.sqrt((i[n]-io)**2-ic_neg**2)+vo
+        n = np.logical_and(i>=io+ic_neg, i<=io+ic_pos); v[n]=vo
+    return v

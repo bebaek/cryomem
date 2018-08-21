@@ -9,7 +9,7 @@ SF1:
       y: 3000
       type: BR/vdP
     A02:
-      x: -2000
+      x: -1000
       y: 3000
       type: TH/vdP
     A03:
@@ -56,3 +56,61 @@ SF1:
       x: 0
       y: -3000
       type: BR/R4w
+SFS9:
+  reticle: SFS9
+  device:
+    grating_rs:
+      x: 2818
+      y: 2160
+    A01:
+      x: 0
+      y: 3000
+      type: JJ
+    A02:
+      x: -1000
+      y: 3000
+      type: JJ
+    A03:
+      x: -2000
+      y: 3000
+      type: JJ
+    A04:
+      x: -3000
+      y: 3000
+      type: JJ
+    A05:
+      x: -3000
+      y: 2000
+      type: JJ
+    A06:
+      x: -3000
+      y: 1000
+      type: JJ
+    A07:
+      x: -3000
+      y: 0
+      type: JJ
+    A08:
+      x: -3000
+      y: -1000
+      type: JJ
+    A09:
+      x: -3000
+      y: -2000
+      type: JJ
+    A10:
+      x: -3000
+      y: -3000
+      type: JJ
+    A11:
+      x: -2000
+      y: -3000
+      type: JJ
+    A12:
+      x: -1000
+      y: -3000
+      type: JJ
+    A13:
+      x: 0
+      y: -3000
+      type: JJ

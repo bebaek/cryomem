@@ -52,11 +52,18 @@ def save_md(dest, md):
         dest: file-like
         md: dict-like
     """
+    # Delete items with _nosave in key
+    md2  = copy.deepcopy(md)			# don't mutate original md
+    keys = [key for key in md2]
+    for key in keys:
+        if key.split("_")[-1] == "nosave":
+            del md2[key]
+
     if isinstance(dest, str):                           # filename is given
         with open(dest, "w") as f:
-            yaml.dump(md, f, default_flow_style=False)
+            yaml.dump(md2, f, default_flow_style=False)
     elif (isinstance(dest, TextIOBase)):                # file-like is given
-        yaml.dump(md, dest, default_flow_style=False)
+        yaml.dump(md2, dest, default_flow_style=False)
 
 def dump_md(md, **kwargs):
     """Convert metadata content to a yaml string."""

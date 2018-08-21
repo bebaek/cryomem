@@ -35,6 +35,24 @@ def load_tdsbin(fname, ftype='tdsbin'):
         # Now make md and data dataframes.
         mdo = load_cmtools_cfg(root)
         mdo["srcfile"] = root + ".dat"
+        datao = {"B": data.c[:,0], "Ioff": data.c[:,1],
+                 "IV": np.vstack(data.i, data.v).transpose()}
+    #elif ftype == 'icarr':               # RSJ fit file
+    #    data = datafile.CMData_H_Ic_Rn(fname)
+    return datao, mdo
+
+def load_tdsbin_old(fname, ftype='tdsbin'):
+    root, ext = os.path.splitext(fname)
+    if ftype == 'tdsbin':                          # Raw trace file
+        cdim = cdim_from_filename(root)
+        data = datafile_cmtools.IVArrayBin8b(root)
+        data.readcfgfile()
+        data.readdatafile(cdim=cdim)
+        data.convert2iv()
+
+        # Now make md and data dataframes.
+        mdo = load_cmtools_cfg(root)
+        mdo["srcfile"] = root + ".dat"
         datao = {"Bapp": data.c[:,0],   "Iapp": data.c[:,1],
                 "Iarr": data.i,         "Varr": data.v}
     #elif ftype == 'icarr':               # RSJ fit file
@@ -140,7 +158,7 @@ def save_data(fname, data, mode="w", **kwargs):
             for tag in data:
                 s = BytesIO()            # StringIO does not work for py3
                 foname  = "{}.txt".format(tag)
-                np.savetxt(s, data[tag], fmt="%.6e")    # to mem
+                np.savetxt(s, data[tag], fmt="%.6e", newline='\r\n')  # to mem
                 zf.writestr(foname, s.getvalue().decode())         # to zip
 
             # save md
@@ -153,6 +171,7 @@ def save_data(fname, data, mode="w", **kwargs):
         dfname = None
     return dfname
 
+
 def conv_tdsbin(finame, foname=None):
     """Convert old tdsbin (BIarrVarr) datafile to zipped txt files.
 
@@ -164,3 +183,18 @@ def conv_tdsbin(finame, foname=None):
     if foname == None:
         foname = finame
     return save_data(foname, data, "w", md=md)
+
+
+def deserialize_data(data, controls, targets):
+    """Return data deserialized by control keys.
+
+    data: Dictionary of arrays or like.
+    control: List of keys for deserializing parameters.
+    target: List of keys.
+    """
+    data_out = {}
+    nc = list(map(len, [data[c] for c in controls]))
+    for t in targets:
+        rem = int(len(data[t])/np.prod(nc))
+        data_out[t] = data[t].reshape(nc + [rem])
+    return data_out

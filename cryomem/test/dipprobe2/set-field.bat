@@ -1,0 +1,1 @@
+cryomem dipprobe set_device B %1 --config Tc.yaml

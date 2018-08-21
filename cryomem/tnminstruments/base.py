@@ -1,6 +1,6 @@
-"""
-Provide base class for common instrument interfaces.
-"""
+"""Provide base class for common instrument interfaces."""
+import visa
+
 
 def isGPIB(s):
     if len(s) > 4:                  # check if it's GPIB
@@ -8,14 +8,17 @@ def isGPIB(s):
             return True
     return False
 
+
 def isserial(s):
     if len(s) > 3:                  # check if serial ("COM1")
         if s[:3].upper() == "COM":
             return True
     return False
 
+
 def isDLL(s):
     return False
+
 
 class Interface:
     """Dynamically define interface methods/parameters.
@@ -30,7 +33,6 @@ class Interface:
         if isGPIB(interface):
             unit = 0                       # normally 0 (single card)
             addr = int(interface[4:])
-            import visa
             rm = visa.ResourceManager()
             rm.list_resources()
             self._set_interface(
@@ -38,7 +40,6 @@ class Interface:
 
         # serial (comN)
         elif isserial(interface):
-            import visa
             rm = visa.ResourceManager()
             rm.list_resources()
             self._set_interface(rm.open_resource(interface))
@@ -51,16 +52,22 @@ class Interface:
         #elif isfake(interface):
         #    self._set_interface(Fake())
 
-        # Invalid interface
+        # general visa interface
         else:
-            print("Invalid interface.")
+            rm = visa.ResourceManager()
+            rm.list_resources()
+            self._set_interface(rm.open_resource(interface))
 
     def _set_interface(self, iface_obj):
+        """Register essential methods."""
         self._iface = iface_obj
         self.write = self._iface.write
         self.read = self._iface.read
         self.query = self._iface.query
-
+        self.query_binary_values = self._iface.query_binary_values
+        self.clear = self._iface.clear	# clear buffer
+        self.read_raw = self._iface.read_raw
+        self.timeout = self._iface.timeout
 #def isfake(s):
 #    if s.lower() == "fake":
 #        return True

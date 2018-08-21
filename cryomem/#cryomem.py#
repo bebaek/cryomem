@@ -1,29 +1,26 @@
-"""Main user command line executable. Just runs subpackage main commands."""
+"""
+Main user command line executable. Just runs subpackage main commands.
+"""
+# Define commands for command line run
+cmd_params = {
+    "fit_datafile":      {"module": "cryomem.analysis.fit_datafile",
+                 "function": "fit_datafile"},
+    "conv_tdsbin": {"module": "cryomem.common.datafile",
+                 "function": "conv_tdsbin"},
+
+    "wedge":    {"module": "cryomem.fab.wedge", "class": "Wedge",
+                 "methods": ["fit", "get_rate", "plot", "get_thickness"]},
+
+    "cmdaq":    {"module": "cryomem.cmtools.lib.daq_dipstick",
+                 "functions": ["reset", "set_dccurrent", "set_field", "set_heat",
+                 "set_sweepvolt", "get_vitrace_vs_h_i", "get_v_dvdi_vs_h_i"]}
+}
+
 import sys
 from importlib import import_module
 from os.path import abspath, dirname, splitext, split
 from glob import glob
 from .common.parse_cmd_argv import parse_cmd_argv
-
-# Define commands for command line run
-cmd_params = {
-    "fit_datafile": {"module": "cryomem.analysis.fit_datafile",
-                     "function": "fit_datafile"},
-    "conv_tdsbin": {"module": "cryomem.common.datafile",
-                    "function": "conv_tdsbin"},
-
-    "cmdaq":    {"module": "cryomem.cmtools.lib.daq_dipstick",
-                 "functions": ["reset", "set_dccurrent", "set_field",
-                 "set_heat", "set_sweepvolt", "get_vitrace_vs_h_i",
-                 "get_v_dvdi_vs_h_i"]},
-
-    "wedge":    {"module": "cryomem.fab.wedge", "class": "Wedge",
-                 "methods": ["fit", "get_rate", "plot", "get_thickness"]},
-
-    "dipprobe2": {"module": "cryomem.dipprobe2.dipprobe", "class": "DipProbe",
-                  "methods": ['set_device', 'log', 'sweep']}
-}
-
 
 def _run(runner, parsed_args):
     """Run function/method and return the result."""
@@ -37,13 +34,12 @@ def _run(runner, parsed_args):
             print(res)
     return res
 
-
 def call(argv):
     """"Import and call a module as a subcommand. Deprecated."""
     mod = import_module("cryomem.commands.{}".format(argv[1]))
     getattr(mod, "main")(argv[1:])
 
-    
+    sys.
 def _call2(argv):
     """Call a command defined by cmd_params above."""
     command = argv[1]
@@ -107,7 +103,6 @@ def _call2(argv):
                 parsed_args = parse_cmd_argv(argv[3:])
                 res = _run(runner, parsed_args)
 
-                
 def _show_help():
     print('\n'
           'Usage: cryomem\n'
@@ -125,7 +120,6 @@ def _show_help():
     #print("Commands: {}\n".format(cmdlist))
     print("Commands:", [key for key in cmd_params])
 
-    
 def main():
     """Entrypoint"""
     if len(sys.argv) < 2:
@@ -138,6 +132,5 @@ def main():
 
     _call2(sys.argv)
 
-    
 if __name__ == '__main__':
     main()

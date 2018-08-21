@@ -24,6 +24,7 @@ pip install -e . -U
 Although the package is basically a library, some functions/methods can be run from the command line. This is the recommended usage for routine test/measurement works.
 
 Display help message:
+
 ```
 > cryomem [--help]
 ```

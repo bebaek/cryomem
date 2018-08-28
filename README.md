@@ -200,7 +200,7 @@ Then I can run a sweep:
 
     cryomem dipprobe2 sweep --config MJJ.yaml --datafile_name testsweep1 --range 0 0.002 0.006 -0.001 -0.01 0.002 0
 
-Resulting data (including metadata) are saved to data/testsweep1.zip.
+Note ```datafile_name``` is updated by the command line argument. Resulting data (including metadata) are saved to data/001_testsweep1.zip.
 
 ### Implemented functions
 
@@ -213,7 +213,7 @@ Resulting data (including metadata) are saved to data/testsweep1.zip.
 
 - Zip-format datafile handling
 
-- Fit:
+- Fit
   - Superconducting transition temperature from a resistance-temperature measurement.
   - Josephson junction current vs voltage: resistively-shunted junction model, Ambegaokar-Halperin.
   - Josephson junction critical current vs field: Fraunhofer pattern, Airy.

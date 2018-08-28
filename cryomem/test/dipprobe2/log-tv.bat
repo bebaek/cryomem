@@ -1,1 +1,0 @@
-cryomem dipprobe log --config Tc.yaml --datafile_name %1

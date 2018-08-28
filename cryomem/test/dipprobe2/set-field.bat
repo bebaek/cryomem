@@ -1,1 +1,1 @@
-cryomem dipprobe set_device B %1 --config Tc.yaml
+cryomem dipprobe2 set_device B %1 --config MJJ.yaml

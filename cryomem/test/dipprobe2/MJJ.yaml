@@ -35,8 +35,8 @@ device:
     read_method_keyword_arguments:
       acquire: yes
       scale:
-      - 0.0001
       - 0.002
+      - 0.0001
     init_method: config_wfm
     init_method_keyword_arguments:
       ch:

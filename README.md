@@ -7,11 +7,11 @@ Python package for experimental research on superconductor-ferromagnet structure
 - Low temperature experiment control: current, voltage, magnetic field, temperature, etc.
 - Measurement instrument interfaces via GPIB, serial, USB are included as a subpackage.
 - Datafiles are zipped text files for both readability and compact size.
-- Metadata is included in zipped datafiles for a self-describing purpose.
+- Metadata is included in zipped datafiles for self-documentation.
 - Technical data fitting for magnetic Josephson junctions and superconducting transition temperature measurements.
 - Install with pip.
-- Certain routine functions (for example, experiment control) can be directly called from the shell command line.
-- Usage of local config files to design experiment control to minimize re-coding.
+- Certain routine functions (for example, experiment control) can be directly called from the shell command line or scripted for automation.
+- Usage of local config files to design experiment control to minimize re-coding case-by-case.
 - High internal code-reusability.
 
 ## Installation

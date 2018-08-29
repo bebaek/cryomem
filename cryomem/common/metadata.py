@@ -41,7 +41,8 @@ def load_md(src):
         with open(src, "r") as f:
             rawconfig = yaml.load(f)
     elif (isinstance(src, TextIOBase)):                # file-like is given
-        rawconfig = yaml.load(src)
+        #rawconfig = yaml.load(src)                    # deprecated/unsafe
+        rawconfig = yaml.safe_load(src)
 
     return parse_md(rawconfig)
 

@@ -202,6 +202,12 @@ Then I can run a sweep:
 
 Note ```datafile_name``` is updated by the command line argument. Resulting data (including metadata) are saved to data/001_testsweep1.zip.
 
+#### Analysis
+
+Code for scientific analysis is included. I usually use Jupyter notebook for the integrated documentation capability. See under cryomem/test/dipprobe2 for the an example.
+
+![](cryomem/test/dipprobe2/nbexample.png)
+
 ### Implemented functions
 
 - dipprobe DAQ

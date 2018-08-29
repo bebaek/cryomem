@@ -86,7 +86,8 @@ def plothyst(*args, **kwargs):
     # plot
     #self.axes = self.figure.add_subplot(111)
     #self.axes.hold(True)
-    ax.set_color_cycle(None)        # windows bug?
+    #ax.set_color_cycle(None)        # windows bug? deprecated
+    ax.set_prop_cycle(None)
     for m in range(len(iturn)-1):
         idx = list(range(iturn[m],iturn[m+1])) + list([iturn[m+1]])
         if m == 0:  # 1st segment

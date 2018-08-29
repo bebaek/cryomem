@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+
+</head>
+
+<body>
+
+<h1 id="cryomem">Cryomem</h1>
+
+<p>Python package for experimental research on superconductor-ferromagnet structures. The package includes test/measurment control, data processing, and analysis.</p>
+
+<h2 id="features">Features</h2>
+
+<ul>
+<li>Low temperature experiment control: current, voltage, magnetic field, temperature, etc.</li>
+<li>Measurement instrument interfaces via GPIB, serial, USB are included as a subpackage.</li>
+<li>Datafiles are zipped text files for both readability and compact size.</li>
+<li>Metadata is included in zipped datafiles for a self-describing purpose.</li>
+<li>Technical data fitting for magnetic Josephson junctions and superconducting transition temperature measurements.</li>
+<li>Install with pip.</li>
+<li>Certain routine functions (for example, experiment control) can be directly called from the shell command line.</li>
+<li>Usage of local config files to design experiment control to minimize re-coding.</li>
+<li>High internal code-reusability.</li>
+</ul>
+
+<h2 id="installation">Installation</h2>
+
+<h3 id="requirements">Requirements</h3>
+
+<p>All should function with Windows 7. Modern Linux systems should work fine except the experiment control. Python 3 is required. Required python packages are numpy, matplotlib, scipy, and pandas. If you use Anaconda distribution,</p>
+
+<pre><code>conda install numpy matplotlib scipy pandas
+</code></pre>
+
+<p>Certain, obsolete modules may require additional modules such as xlrd. They should be available from conda or pip.</p>
+
+<h3 id="cryomeminstallation">Cryomem installation</h3>
+
+<p>Go to the root of the repository where setup.py is located, then run</p>
+
+<pre><code>pip install -e .
+</code></pre>
+
+<p>To uninstall, run</p>
+
+<pre><code>pip uninstall cryomem
+</code></pre>
+
+<p>Depending on the modules to use, you may need to install required packages including numpy, matplotlib, scipy, pandas. If you use an anaconda distribution, run <code>conda install &lt;package&gt;</code>. If the package is not available from conda, <code>pip search &lt;package&gt;</code> then <code>pip install &lt;package&gt;</code>.</p>
+
+<p>To upgrade the version, cd to the new source and run</p>
+
+<pre><code>pip install -e . -U
+</code></pre>
+
+<h3 id="test">Test</h3>
+
+<p>From the command line, run</p>
+
+<pre><code>cryomem
+</code></pre>
+
+<p>It should show available subcommands.</p>
+
+<h2 id="usage">Usage</h2>
+
+<h3 id="commandline">Command line</h3>
+
+<p>Although the package is basically a library, some functions/methods can be run from the command line for agile or scripted work. This is recommended for a routine experiment control.</p>
+
+<p>Display help message:</p>
+
+<pre><code>cryomem [--help]
+</code></pre>
+
+<p>Display help message for a <code>&lt;command&gt;</code>:</p>
+
+<pre><code>cryomem &lt;command&gt; --help
+</code></pre>
+
+<p>General form. <code>&lt;parameters&gt;</code> is a list of arguments followed by keyword arguments. A keyword argument is given by <code>--&lt;key&gt; &lt;value&gt; [more values]</code>.</p>
+
+<pre><code>cryomem &lt;command&gt; [&lt;parameters&gt;]
+</code></pre>
+
+<h3 id="pythonscript">Python script</h3>
+
+<p>Load the code and call help as needed:</p>
+
+<pre><code>from cryomem.dipprobe.dipprobe import DipProbe
+probe = DipProbe()
+probe.help()
+</code></pre>
+
+<p>Example with a config file:</p>
+
+<pre><code>probe.load_config(file="log_R_T.yaml")
+probe.log()
+</code></pre>
+
+<p>To directly pass parameters without a config file:</p>
+
+<pre><code>parameters = {
+  "device": {
+    "R_thermometer": {
+      "name": "Thermometer resistance",
+      "instrument": "KT2001",
+      "interface": "gpib11",
+      "read_method": "read_R4W",
+      "raw_unit": "1 Ohm",
+      "sensor": "lakeshore_X104724",
+      "unit": "K"
+    },
+    "Rac_device": {
+      "name": "Device lock-in amplitude",
+      "instrument": "SR830",
+      "interface": "gpib9",
+      "read_method": "get_r",
+      "unit": "V"
+    },
+    "t": {
+      "name": "Time",
+      "read_module": "time",
+      "read_method": "time"
+    }
+  },
+  "sequence": {
+    "log": {
+      "read": ["t", "R_thermometer", "Rac_device"],
+      "delay": "5 s",
+      "duration": "20 s",
+      "datafile_name": "test sample 1.txt",
+      "datafile_increment": "No"
+    }
+  }
+}
+probe.load_config(parameters=parameters)
+probe.log()
+</code></pre>
+
+<p>If a config file is already loaded this procedure adds new parameters or overwrites existing ones.</p>
+
+<h3 id="configfile">Config file</h3>
+
+<p>Subpackage dipprobe has been written to use config files extensively for test/measurement settings. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency. See <code>cryomem/test/dipprobe/testconfig.yaml</code> for an example.</p>
+
+<p>A config file is loaded from the command line by a parameter</p>
+
+<pre><code>--config &lt;config file&gt;
+</code></pre>
+
+<p>or from a python script by calling a method:</p>
+
+<pre><code>&lt;obj&gt;.load_config(file=&lt;config file&gt;)
+</code></pre>
+
+<h3 id="example">Example</h3>
+
+<h4 id="experimentcontrol">Experiment control</h4>
+
+<p>One of the main experiments is measuring Josephson junction current-voltage with a field sweep. I can set up the config file:</p>
+
+<pre><code># Define device physical parameters to set or read.
+device:
+
+  B:
+    name: Field bias
+    unit: T
+    write_module: cryomem.tnminstruments.SR830
+    write_class: SR830
+    write_class_keyword_arguments:
+      interface: gpib9
+    write_method: set_auxvout
+    write_method_keyword_arguments:
+      channel: 1
+    divisors:
+      B_per_I: 0.0674
+      I_per_V: -2.0
+    max: 0.4
+    step: 0.0005
+    delay: 0.001
+
+  IV:
+    name: IV trace
+    unit:
+    - A
+    - V
+    read_module: cryomem.tnminstruments.KS6000X
+    read_class: KS6000X
+    read_class_keyword_arguments:
+      interface: USB0::0x0957::0x1790::MY54130118::INSTR
+    read_method: get_wfm
+    read_method_keyword_arguments:
+      acquire: yes
+      scale:
+      - 0.002
+      - 0.0001
+    init_method: config_wfm
+    init_method_keyword_arguments:
+      ch:
+      - 1
+      - 2
+      mode: average
+
+# Specify arguments passed to the sequences (hard-coded) that
+# set or read physical quantities defined above.
+sequence:
+
+  set_device:
+    val: 0
+
+  sweep:
+    datafile_increment: yes
+    datafile_name: test device A
+    delay: 2
+    sweep:
+    - B
+    read:
+    - IV
+</code></pre>
+
+<p>Then I can run a sweep:</p>
+
+<pre><code>cryomem dipprobe2 sweep --config MJJ.yaml --datafile_name testsweep1 --range 0 0.002 0.006 -0.001 -0.01 0.002 0
+</code></pre>
+
+<p>Note <code>datafile_name</code> is updated by the command line argument. Resulting data (including metadata) are saved to data/001_testsweep1.zip.</p>
+
+<h4 id="analysis">Analysis</h4>
+
+<p>Code for scientific analysis is included. I usually use Jupyter notebook for the integrated documentation capability. See under cryomem/test/dipprobe2 for the an example.</p>
+
+<p><img src="cryomem/test/dipprobe2/nbexample.png" alt="" /></p>
+
+<h3 id="implementedfunctions">Implemented functions</h3>
+
+<ul>
+<li><p>dipprobe DAQ</p>
+
+<ul>
+<li>Instrument control: GPIB, RS232, USB (VISA or DLL wrapper).</li>
+<li>Superconductor resistance vs temperature</li>
+<li>Josephson junction current vs voltage with a magnetic field sweep</li>
+</ul></li>
+<li><p>YAML configuration file handling</p></li>
+<li><p>Zip-format datafile handling</p></li>
+<li><p>Fit</p>
+
+<ul>
+<li>Superconducting transition temperature from a resistance-temperature measurement.</li>
+<li>Josephson junction current vs voltage: resistively-shunted junction model, Ambegaokar-Halperin.</li>
+<li>Josephson junction critical current vs field: Fraunhofer pattern, Airy.</li>
+<li>Magnetic JJ characteristic voltage (IcRn) vs magnetic layer thickness: clean limit.</li>
+<li>Wedge thin film thickness distribution.</li>
+</ul></li>
+</ul>
+
+<h2 id="development">Development</h2>
+
+<h3 id="structure">Structure</h3>
+
+<p>Subpackages are intended to be independent from each other except "common" subpackage. Example subpackages:</p>
+
+<ul>
+<li>common: shared utility code</li>
+<li>data: static data requiring frequent access (ex: thickness calibration data)</li>
+<li>analysis: data analysis including fit.</li>
+<li>dipprobe2: new dipprobe control code</li>
+<li>fab: code for fab parameters</li>
+<li>test: examples</li>
+<li>cmtools, dipprobe: old dipprobe control code</li>
+</ul>
+
+<h3 id="commandlineexecution">Command line execution</h3>
+
+<p>The entrypoint is "cryomem.py". The run commands are registered in the beginning of the entrypoint module.</p>
+
+<h3 id="miscellaneous">Miscellaneous</h3>
+
+<ul>
+<li>SQL and noSQL databases have been tried for data storage but I settled down with local storage. Agility is more important than scaling in most small-scale research.</li>
+<li>The speed of scientific data fitting can be improved by parallel processing especially if multi-dimensional numerical integration is involved. Ambegaokar-Halperin fitting has been improved by the number of the used CPU cores, for example. In other cases, there has been no real need for performance improvement.</li>
+<li>Resistance vs temperature measurement pops open a live plot but otherwise I didn't bother to add such a live visualization. JJ measurements could be visualized by surface plotting the accumulated I-V curves or even open a parallel thread/process for live-fitting and plotting selected fit parameters.</li>
+<li>GUI experimental control has been tried in cmtools subpackage (cmdaq-gui). This combines editing config and batch files with command line shell in a frame. That subpackage has been deprecated but such a GUI can be implemented for newer subpackages too. Adding a live plot should make it quite complete.</li>
+<li>Multithread experiment control has been looked into. Such a scheme has, for example, main kernel, user interface, and instrument control in separate threads and processes. Message-based communication makes this scheme modular and even distributed (over nodes). The kernel can be in the background and keep track of the instrument status (which helps in dealing with simple instruments and unified failsafe mechanism). The kernel is always responsive to the user and unaffected by unresponsive instruments or data processing unit.</li>
+<li>I use SI units implicitly. It would be good to handle units explicitly without hassle.</li>
+</ul>
+
+</body>
+</html>

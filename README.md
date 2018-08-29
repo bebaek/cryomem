@@ -85,33 +85,42 @@ To directly pass parameters without a config file:
       "device": {
         "R_thermometer": {
           "name": "Thermometer resistance",
-          "instrument": "KT2001",
-          "interface": "gpib11",
+          "unit": "K",
+	  "read_module": "cryomem.tnminstruments.KT2001",
+	  "read_class": "KT2001",
+	  "read_class_keyword_arguments": {
+	    "interface": "gpib11"
+	  },
           "read_method": "read_R4W",
-          "raw_unit": "1 Ohm",
-          "sensor": "lakeshore_X104724",
-          "unit": "K"
-        },
-        "Rac_device": {
-          "name": "Device lock-in amplitude",
-          "instrument": "SR830",
-          "interface": "gpib9",
-          "read_method": "get_r",
-          "unit": "V"
         },
         "t": {
           "name": "Time",
           "read_module": "time",
           "read_method": "time"
-        }
+        },
+        "T": {
+          "name": "Temperature",
+          "unit": "K",
+          "read_module": "cryomem.dipprobe.thermometer",
+          "read_class": "Cernox",
+          "read_class_keyword_arguments": {
+            "serial": "X104724"
+	  },
+          "read_method": "get_temperature",
+          "input_variable": "R_thermometer"
+        },
       },
       "sequence": {
         "log": {
-          "read": ["t", "R_thermometer", "Rac_device"],
-          "delay": "5 s",
-          "duration": "20 s",
-          "datafile_name": "test sample 1.txt",
-          "datafile_increment": "No"
+          "datafile_increment": "Yes"
+          "datafile_name": "testlog.txt",
+          "delay": 2,
+          "duration": 3600,
+          "read": ["t", "R_thermometer", "T"],
+	  "plot_prop": ["t", "T"]
+        },
+	"set_device": {
+	  "val": 0
         }
       }
     }
@@ -122,7 +131,7 @@ If a config file is already loaded this procedure adds new parameters or overwri
 
 ### Config file
 
-Subpackage dipprobe has been written to use config files extensively for test/measurement settings. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency. See ```cryomem/test/dipprobe/testconfig.yaml``` for an example.
+Subpackage dipprobe has been written to use config files extensively for test/measurement settings. Measurement instruments, target parameters, DAQ sequence parameters can be specified in a YAML file to achieve both flexibility and efficiency. See .yaml files in ```cryomem/test/dipprobe```, ```cryomem/test/dipprobe2```, or the following section for an example.
 
 A config file is loaded from the command line by a parameter
 
@@ -130,7 +139,7 @@ A config file is loaded from the command line by a parameter
 
 or from a python script by calling a method:
 
-    <obj>.load_config(file=<config file>)
+    <instance>.load_config(file=<config file>)
 
 ### Example
 
@@ -189,7 +198,7 @@ One of the main experiments is measuring Josephson junction current-voltage with
 		
       sweep:
         datafile_increment: yes
-        datafile_name: test device A
+        datafile_name: testrun
         delay: 2
         sweep:
         - B
@@ -198,9 +207,9 @@ One of the main experiments is measuring Josephson junction current-voltage with
 
 Then I can run a sweep:
 
-    cryomem dipprobe2 sweep --config MJJ.yaml --datafile_name testsweep1 --range 0 0.002 0.006 -0.001 -0.01 0.002 0
+    cryomem dipprobe2 sweep --config MJJ.yaml --datafile_name testsweep --range 0 0.002 0.006 -0.001 -0.01 0.002 0
 
-Note ```datafile_name``` is updated by the command line argument. Resulting data (including metadata) are saved to data/001_testsweep1.zip.
+Note ```datafile_name``` is updated by the command line argument. Resulting data (including metadata) are saved to data/001_testsweep.zip.
 
 #### Analysis
 
@@ -246,9 +255,9 @@ The entrypoint is "cryomem.py". The run commands are registered in the beginning
 
 ### Miscellaneous
 
-- SQL and noSQL databases have been tried for data storage but I settled down with local storage. Agility is more important than scaling in most small-scale research.
-- The speed of scientific data fitting can be improved by parallel processing especially if multi-dimensional numerical integration is involved. Ambegaokar-Halperin fitting has been improved by the number of the used CPU cores, for example. In other cases, there has been no real need for performance improvement.
+- SQL and noSQL databases have been tried for data storage but I settled down to local storage. Agility/portability is more important than scaling in most small-scale research.
+- The speed of scientific data fitting can be improved by parallel processing especially if multi-dimensional numerical integration is involved. Ambegaokar-Halperin fitting has been improved by the number of the used CPU cores, for example. GPU programming could improve it further if needed.
 - Resistance vs temperature measurement pops open a live plot but otherwise I didn't bother to add such a live visualization. JJ measurements could be visualized by surface plotting the accumulated I-V curves or even open a parallel thread/process for live-fitting and plotting selected fit parameters.
 - GUI experimental control has been tried in cmtools subpackage (cmdaq-gui). This combines editing config and batch files with command line shell in a frame. That subpackage has been deprecated but such a GUI can be implemented for newer subpackages too. Adding a live plot should make it quite complete.
-- Multithread experiment control has been looked into. Such a scheme has, for example, main kernel, user interface, and instrument control in separate threads and processes. Message-based communication makes this scheme modular and even distributed (over nodes). The kernel can be in the background and keep track of the instrument status (which helps in dealing with simple instruments and unified failsafe mechanism). The kernel is always responsive to the user and unaffected by unresponsive instruments or data processing unit.
-- I use SI units implicitly. It would be good to handle units explicitly without hassle.
+- Multithread experiment control has been considered. Such a scheme has, for example, main kernel, user interface, and instrument control in separate threads and processes. Message-based communication makes this scheme modular and even distributed (over nodes). The kernel can be in the background and keep track of the instrument status (which helps in dealing with simple instruments and unified failsafe mechanism). The kernel is always responsive to the user and unaffected by unresponsive instruments or data processing unit.
+- I use SI units implicitly. It would be good to handle units explicitly.

@@ -265,4 +265,4 @@ The entrypoint is "cryomem.py". The run commands are registered in the beginning
 ## Research enabled by Cryomem
 
 - Anomalous Supercurrent Modulation in Josephson Junctions With Ni-Based Barriers. ([https://doi.org/10.1109/TASC.2018.2836961](https://doi.org/10.1109/TASC.2018.2836961))
-- Phase Offsets in the Critical-Current Oscillations of Josephson Junctions Based on Ni and Ni-(Ni_{81}Fe_{19})_{x}Nb_{y} Barriers. ([https://doi.org/10.1103/PhysRevApplied.7.064013](https://doi.org/10.1103/PhysRevApplied.7.064013))
+- Phase Offsets in the Critical-Current Oscillations of Josephson Junctions Based on Ni and Ni-(Ni<sub>81</sub>Fe<sub>19</sub>)<sub>x</sub>Nb<sub>y</sub> Barriers. ([https://doi.org/10.1103/PhysRevApplied.7.064013](https://doi.org/10.1103/PhysRevApplied.7.064013))

@@ -213,7 +213,7 @@ Note ```datafile_name``` is updated by the command line argument. Resulting data
 
 #### Analysis
 
-Code for scientific analysis is included. I usually use Jupyter notebook for the integrated documentation capability. See under cryomem/test/dipprobe2 for the an example.
+Code for scientific analysis is included. I usually use Jupyter notebook for the integrated documentation capability. See under cryomem/test/dipprobe2 for an example.
 
 ![](cryomem/test/dipprobe2/nbexample.png)
 
@@ -261,3 +261,8 @@ The entrypoint is "cryomem.py". The run commands are registered in the beginning
 - GUI experimental control has been tried in cmtools subpackage (cmdaq-gui). This combines editing config and batch files with command line shell in a frame. That subpackage has been deprecated but such a GUI can be implemented for newer subpackages too. Adding a live plot should make it quite complete.
 - Multithread experiment control has been considered. Such a scheme has, for example, main kernel, user interface, and instrument control in separate threads and processes. Message-based communication makes this scheme modular and even distributed (over nodes). The kernel can be in the background and keep track of the instrument status (which helps in dealing with simple instruments and unified failsafe mechanism). The kernel is always responsive to the user and unaffected by unresponsive instruments or data processing unit.
 - I use SI units implicitly. It would be good to handle units explicitly.
+
+### Research enabled by Cryomem
+
+- Anomalous Supercurrent Modulation in Josephson Junctions With Ni-Based Barriers. ([https://doi.org/10.1109/TASC.2018.2836961](https://doi.org/10.1109/TASC.2018.2836961))
+- Phase Offsets in the Critical-Current Oscillations of Josephson Junctions Based on Ni and Ni-(Ni_{81}Fe_{19})_{x}Nb_{y} Barriers. ([https://doi.org/10.1103/PhysRevApplied.7.064013](https://doi.org/10.1103/PhysRevApplied.7.064013))

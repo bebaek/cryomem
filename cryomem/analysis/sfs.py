@@ -12,7 +12,8 @@ from scipy.integrate import quad
 e = 1.60217657e-19
 hbar = 1.05457173e-34
 kb = 1.3806488e-23
-    
+eps = 1e-16j
+
 def vc_SFS_sinc(d, prefac, xi, d0, phi0):
     """Return simple clean limit characteristic voltage in sinc function
     """
@@ -68,9 +69,9 @@ def _IsRn_SFS_B82(phi, d, xi, delta, t, **kwargs):
     a = d/xi; t=kb*t; delta = e*delta
     prefac = np.pi*delta*a**2/2/e
     f = lambda y: \
-        prefac*y**(-3) \
+        (prefac*(y + eps)**(-3) \
         *(np.sin((phi-y)/2)*np.tanh(delta*np.cos((phi-y)/2)/(2*t)) \
-          + np.sin((phi+y)/2)*np.tanh(delta*np.cos((phi+y)/2)/(2*t)))
+          + np.sin((phi+y)/2)*np.tanh(delta*np.cos((phi+y)/2)/(2*t)))).real
     res = quad(f, a, np.inf, **kwargs)
     return res[0]
 

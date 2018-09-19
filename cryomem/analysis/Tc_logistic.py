@@ -71,7 +71,7 @@ class T_R_asym_tanh:
 class T_R_genlogistic:
     """Superconducting R(T) data fitting class with general logistic function"""
     def __init__(self, T, R):
-        idx = deglitch(T, factor=10)
+        idx = deglitch(T, factor=20)
         self.T, self.R = T[idx], R[idx]
         self.fitfunc = genlogistic
 
@@ -81,6 +81,7 @@ class T_R_genlogistic:
         fitparams: 
             lb_Tc, ub_Tc -- float
             others passed to curve_fit()"""
+        fitparams['method'] = fitparams.get('method', 'lm')
         Tmin, Tmax = np.amin(self.T), np.amax(self.T)
         Rmin = np.mean(self.R[self.T < Tmin + (Tmax - Tmin)*.1])
         Rmax = np.mean(self.R[self.T > Tmax - (Tmax - Tmin)*.1])
@@ -104,14 +105,15 @@ class T_R_genlogistic:
         #print("Bounds:", bounds)
 
         # Fit
-        fitkwargs = dict(method="trf", bounds=bounds, **fitparams)
+        #fitkwargs = dict(method="trf", bounds=bounds, **fitparams)
+        #fitkwargs = dict(method="lm", **fitparams)
         self.popt, self.pcov = curve_fit(self.fitfunc, self.T, self.R, guess,
-                                         **fitkwargs)
+                                         **fitparams)
         A, K, B, M, nu = self.popt
         Tc = (B*M - np.log(2**nu - 1))/B    # halfway pt
         Rc = self.fitfunc(Tc, *self.popt)
         perr = np.sqrt(np.diag(self.pcov))
-        return Tc, Rc, perr
+        return Tc, Rc, self.popt, perr
 
     def build_fitcurve(self, **kwargs):
         """Calculate and return (T, R) from fit parameters.

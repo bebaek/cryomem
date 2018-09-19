@@ -87,35 +87,5 @@ class FitAiryPat:
 def test():
     print(FitAiryPat().run(datafile="testdata.txt"))
 
-def main():
-    """Entrypoint"""
-    if len(sys.argv) > 5:
-        guess = tuple(map(float, sys.argv[1:]))
-    else:
-        guess = None
-
-    dfiles = glob.glob("*.dat")
-    for dfile in dfiles:
-        data = pd.read_table(dfile, sep='\s+', comment="#")
-        x, y = (data['T'], data["Vac_device"])
-        plt.plot(x, y, "o", label=dfile)
-        plt.legend(loc=2)
-
-        if len(sys.argv) > 5:
-            y2 = genlogistic(x, *guess)
-            plt.plot(x, y2, "-")
-        plt.pause(5)
-
-        fitter = T_R_genlogistic(x, y)
-        Tc, Rc, perr = fitter.fit()
-        print("Tc, Rc, error =", Tc, Rc, perr)
-        print("Fit parameters =", fitter.popt)
-        xfit, yfit = fitter.build_fitcurve()
-        plt.plot(xfit, yfit, "-")
-        #plt.plot(Tc, Rc, "s")
-        plt.pause(5)
-        plt.cla()
-    #plt.pause(10)
-
 if __name__ == "__main__":
     test()

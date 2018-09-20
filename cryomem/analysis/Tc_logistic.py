@@ -81,7 +81,6 @@ class T_R_genlogistic:
         fitparams: 
             lb_Tc, ub_Tc -- float
             others passed to curve_fit()"""
-        fitparams['method'] = fitparams.get('method', 'lm')
         Tmin, Tmax = np.amin(self.T), np.amax(self.T)
         Rmin = np.mean(self.R[self.T < Tmin + (Tmax - Tmin)*.1])
         Rmax = np.mean(self.R[self.T > Tmax - (Tmax - Tmin)*.1])
@@ -107,13 +106,20 @@ class T_R_genlogistic:
         # Fit
         #fitkwargs = dict(method="trf", bounds=bounds, **fitparams)
         #fitkwargs = dict(method="lm", **fitparams)
-        self.popt, self.pcov = curve_fit(self.fitfunc, self.T, self.R, guess,
-                                         **fitparams)
+        try:
+            fitparams['method'] = fitparams.get('method', 'lm')
+            self.popt, self.pcov = curve_fit(self.fitfunc, self.T, self.R,
+                                             guess, **fitparams)
+        except RuntimeError:  # Try different fit method
+            fitparams['method'] = 'trf' if fitparams['method'] == 'lm' else 'lm'
+            self.popt, self.pcov = curve_fit(self.fitfunc, self.T, self.R,
+                                             guess, **fitparams)
+            
         A, K, B, M, nu = self.popt
         Tc = (B*M - np.log(2**nu - 1))/B    # halfway pt
         Rc = self.fitfunc(Tc, *self.popt)
         perr = np.sqrt(np.diag(self.pcov))
-        return Tc, Rc, self.popt, perr
+        return Tc, Rc, perr
 
     def build_fitcurve(self, **kwargs):
         """Calculate and return (T, R) from fit parameters.
